@@ -1,0 +1,148 @@
+body {
+  font-family: "Rubik", sans-serif;
+  -webkit-user-select: none;
+     -moz-user-select: none;
+          user-select: none;
+  text-align: center;
+  background-color: #EEE;
+  overflow-x: hidden;
+}
+
+.header .desktop-header {
+  align-items: center;
+  justify-content: space-around;
+  display: flex;
+  height: 50px;
+  margin-bottom: 40px;
+  min-width: 1305px;
+}
+.header .button {
+  margin: 5px;
+  width: 200px;
+  line-height: 48px;
+  font-size: 12px;
+  cursor: pointer;
+  background-color: #BBB;
+  border: 2px solid #000;
+  border-radius: 4px;
+  height: calc(100% - 4px);
+  padding: 0 8px;
+  min-width: 160px;
+}
+.header .button.disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+.header .options {
+  display: flex;
+}
+.header .options .selected {
+  box-shadow: inset 0 0 0 2px #000;
+}
+.header .options > div {
+  width: 50px;
+  height: 50px;
+  border-radius: 25px;
+  margin: 0 10px;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+.header .options > div.help {
+  font-size: 36px;
+  line-height: 50px;
+  background-color: white;
+}
+
+h1 {
+  vertical-align: baseline;
+  font-weight: bold;
+  min-width: 1305px;
+}
+
+#tooltip {
+  opacity: 0;
+  width: 200px;
+  background-color: #555;
+  color: #fff;
+  text-align: center;
+  border-radius: 6px;
+  padding: 8px 0;
+  position: fixed;
+  left: calc(50% - 100px);
+  top: 140px;
+}
+
+#svg {
+  margin-top: 50px;
+  width: 100%;
+}
+
+.version {
+  margin-top: -50px;
+  margin-right: -450px;
+  margin-bottom: 36px;
+  font-size: 12px;
+}
+@media screen and (max-width: 1320px) {
+  .version {
+    position: absolute;
+    left: 870px;
+  }
+}
+
+/* Help modal */
+.modal-container {
+  position: fixed;
+  display: none;
+  z-index: 1;
+  padding-top: 100px;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.4);
+}
+.modal-container .modal {
+  background-color: #fefefe;
+  margin: auto;
+  padding: 20px;
+  border: 1px solid #888;
+  width: 950px;
+}
+.modal-container .modal .help-title {
+  font-size: 24px;
+  margin-bottom: 20px;
+}
+.modal-container .modal .help-text {
+  line-height: 24px;
+}
+.modal-container .modal .help-text span {
+  padding: 2px;
+  color: white;
+}
+.modal-container .modal .close-modal {
+  float: right;
+  margin-top: -104px;
+  font-size: 24px;
+  cursor: pointer;
+}
+
+div#close-race, span#close-race {
+  background-color: #767171;
+}
+div#nat, span#nat {
+  background-color: #1e4882;
+}
+div#lab, span#lab {
+  background-color: #d00a12;
+}
+div#act, span#act {
+  background-color: #f3ca1e;
+  color: #000;
+}
+div#grn, span#grn {
+  background-color: #0ca747;
+}
+div#tpm, span#tpm {
+  background-color: #c37d23;
+}
