@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width">
   <title>NZ Electorates</title>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik">
-  <link rel="stylesheet" href="styles.css?v=1" />
+  <link rel="stylesheet" href="styles.css?v=2" />
   <script src="./main.js"></script>
   <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
   <!-- Google tag (gtag.js) -->
@@ -19,7 +19,7 @@
 </head>
 <body onload="handlePageLoad()">
   <h1>Interactive Electorate Map</h1>
-  <div class="version">v0.1.0</div>
+  <div class="version">v0.2.0</div>
   <div class="header">
     <div class="desktop-header">
       <div class="button" onclick="goToTextTool()">
@@ -29,10 +29,12 @@
         <div id="close-race" class="close-race selected"></div>
         <div id="nat"></div>
         <div id="lab"></div>
-        <div class="help" onclick="showHelpModal()">?</div>
         <div id="act"></div>
+        <div class="help" onclick="showHelpModal()">?</div>
         <div id="grn"></div>
         <div id="tpm"></div>
+        <div id="nzf"></div>
+        <div id="top"></div>
       </div>
       <div class="button" onclick="capture()">
         EXPORT RATINGS (PNG)
@@ -54,7 +56,7 @@
       <div class="help-text">
         To use this tool click one of the six coloured buttons at the top of the page and then click an electorate to update its rating.<br/>
         These colours represent <span id="close-race">Close Race</span>, <span id="nat">National</span>, <span id="lab">Labour</span>,
-        <span id="act">ACT</span>, <span id="grn">Green</span>, and <span id="tpm">Te Pāti Māori</span>, respectively.<br/>
+        <span id="act">ACT</span>, <span id="grn">Green</span>, <span id="tpm">Te Pāti Māori</span>, <span id="nzf">NZ First</span>, and <span id="top">TOP</span>, respectively.<br/>
         Once you have finished updating the electorates, click the 'EXPORT RATINGS (PNG)' button to export a PNG of your ratings.
       <div class="close-modal">x</div>
     </div>

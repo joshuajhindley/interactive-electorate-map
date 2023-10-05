@@ -28,6 +28,8 @@ var ratingToColourMap = {
   "grn": "#0ca747",
   "act": "#f3ca1e",
   "tpm": "#c37d23",
+  "top": "#09B598",
+  "nzf": "#000000",
 }
 
 async function handlePageLoad() {
