@@ -17,7 +17,7 @@ var specialNameMap = {
   "te-atatu": "Te Atatū",
   "te-tai-hauauru": "Te Tai Hauāuru",
   "west-coast-tasman": "West Coast-Tasman",
-  "whangaparoa": "Whangaparāoa",
+  "whangaparaoa": "Whangaparāoa",
   "whangarei": "Whangārei",
 }
 
