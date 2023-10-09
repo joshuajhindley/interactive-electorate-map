@@ -66,7 +66,7 @@ h1 {
   opacity: 0;
   width: 200px;
   background-color: #555;
-  color: #fff;
+  color: #FFF;
   text-align: center;
   border-radius: 6px;
   padding: 8px 0;
@@ -77,7 +77,12 @@ h1 {
 
 #svg {
   margin-top: 50px;
+  margin-bottom: 20px;
   width: 100%;
+}
+
+#to-export {
+  margin-bottom: 30px;
 }
 
 .version {
@@ -121,7 +126,7 @@ h1 {
 }
 .modal-container .modal .help-text span {
   padding: 2px;
-  color: white;
+  color: #FFF;
 }
 .modal-container .modal .close-modal {
   float: right;
@@ -130,28 +135,54 @@ h1 {
   cursor: pointer;
 }
 
-div#close-race, span#close-race {
+#table {
+  position: absolute;
+  left: 1200px;
+  top: 1060px;
+  z-index: 5;
+}
+#table .line {
+  display: flex;
+  width: 200px;
+  margin-top: 4px;
+}
+#table .line .party {
+  flex-grow: 1;
+}
+#table .line [class^=seats] {
+  width: 80px;
+  margin-left: 10px;
+}
+
+div#close-race, div.close-race, span#close-race, span.close-race {
   background-color: #767171;
+  color: #FFF;
 }
-div#nat, span#nat {
+div#nat, div.nat, span#nat, span.nat {
   background-color: #1e4882;
+  color: #FFF;
 }
-div#lab, span#lab {
+div#lab, div.lab, span#lab, span.lab {
   background-color: #d00a12;
+  color: #FFF;
 }
-div#act, span#act {
+div#act, div.act, span#act, span.act {
   background-color: #f3ca1e;
   color: #000;
 }
-div#grn, span#grn {
+div#grn, div.grn, span#grn, span.grn {
   background-color: #0ca747;
+  color: #FFF;
 }
-div#tpm, span#tpm {
+div#tpm, div.tpm, span#tpm, span.tpm {
   background-color: #c37d23;
+  color: #FFF;
 }
-div#nzf, span#nzf {
+div#nzf, div.nzf, span#nzf, span.nzf {
   background-color: #000000;
+  color: #FFF;
 }
-div#top, span#top {
+div#top, div.top, span#top, span.top {
   background-color: #09B598;
+  color: #FFF;
 }

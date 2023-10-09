@@ -1,4 +1,5 @@
 var selected = 'close-race'
+var listSeatsCalculated = false
 
 var specialNameMap = {
   "hauraki-waikato": "Hauraki-Waikato",
@@ -21,18 +22,19 @@ var specialNameMap = {
   "whangarei": "Whangārei",
 }
 
-var ratingToColourMap = {
-  "close-race": "#767171",
-  "lab": "#d00a12",
-  "nat": "#1e4882",
-  "grn": "#0ca747",
-  "act": "#f3ca1e",
-  "tpm": "#c37d23",
-  "top": "#09B598",
-  "nzf": "#000000",
+var ratingMap = {
+  // TODO maybe update with overhang seats
+  "close-race": { electorateSeats: 0, color: "#767171" },
+  "lab": { electorateSeats: 0, listSeats: 0, totalSeats: 0, color: "#d00a12", fullName: "Labour" },
+  "nat": { electorateSeats: 0, listSeats: 0, totalSeats: 0, color: "#1e4882", fullName: "National" },
+  "grn": { electorateSeats: 0, listSeats: 0, totalSeats: 0, color: "#0ca747", fullName: "Green" },
+  "act": { electorateSeats: 0, listSeats: 0, totalSeats: 0, color: "#f3ca1e", fullName: "ACT" },
+  "tpm": { electorateSeats: 0, listSeats: 0, totalSeats: 0, color: "#c37d23", fullName: "Te Pāti Māori" },
+  "top": { electorateSeats: 0, listSeats: 0, totalSeats: 0, color: "#09B598", fullName: "TOP" },
+  "nzf": { electorateSeats: 0, listSeats: 0, totalSeats: 0, color: "#000000", fullName: "NZ First" },
 }
 
-var colourToRatingMap = {
+var colorToRatingMap = {
   "#767171": "close-race",
   "#d00a12": "lab",
   "#1e4882": "nat",
@@ -59,11 +61,51 @@ async function handlePageLoad() {
   for (var pathElem of pathElems) {
     const label = pathElem.getAttribute('inkscape:label')
     if (label !== null) {
+      const rating = colorToRatingMap[rgbToHex(pathElem.style.fill)]
+      ratingMap[rating].electorateSeats += 1
+
       const tooltipText = specialNameMap[label] || formatLabel(label)
       pathElem.setAttribute('onclick', "handlePathClick(event)")
       pathElem.setAttribute('onmouseover', `showTooltip('${tooltipText}')`)
       pathElem.setAttribute('onmouseleave', "hideTooltip()")
     }
+  }
+  setupTable()
+}
+
+function setupTable() {
+  const table = document.getElementById('table')
+  table.replaceChildren()
+
+  const orderedKeys = Object.keys(ratingMap)
+    .filter(rating => ratingMap[rating].electorateSeats > 0 && rating !== "close-race")
+    .sort((rating1, rating2) => ratingMap[rating2].electorateSeats - ratingMap[rating1].electorateSeats)
+  orderedKeys.unshift('titles')
+
+  for(let key of orderedKeys) {
+    var line = document.createElement('div')
+    line.className = 'line'
+    table.appendChild(line)
+
+    var div = document.createElement('div')
+    div.className = `party ${key}`
+    div.innerHTML = ratingMap[key]?.fullName || ""
+    line.appendChild(div)
+
+    div = document.createElement('div')
+    div.className = `seats-${key}`
+    div.innerHTML = key === 'titles' ? "Electorate Seats" : ratingMap[key].electorateSeats
+    line.appendChild(div)
+
+    // div = document.createElement('div')
+    // div.className = `seats-${key}`
+    // div.innerHTML = key === 'titles' ? "List Seats" : ratingMap[key].listSeats
+    // line.appendChild(div)
+
+    // div = document.createElement('div')
+    // div.className = `seats-${key}`
+    // div.innerHTML = key === 'titles' ? "Total Seats" : ratingMap[key].totalSeats
+    // line.appendChild(div)
   }
 }
 
@@ -75,9 +117,60 @@ function formatLabel(label) {
    return splitStr.join(' ')
 }
 
+function seatCalculator() {
+  let quotients = {
+    act: { fullPercent: 10, dividedPercent: 10, divisor: 1 },
+    lab: { fullPercent: 28, dividedPercent: 28, divisor: 1 },
+    grn: { fullPercent: 15, dividedPercent: 15, divisor: 1 },
+    tpm: { fullPercent: 3.01, dividedPercent: 3.01, divisor: 1 },
+    nzf: { fullPercent: 6.02, dividedPercent: 6.02, divisor: 1 },
+    nat: { fullPercent: 35, dividedPercent: 35, divisor: 1 },
+  }
+
+  Object.keys(quotients)
+    .filter(party => quotients[party].fullPercent < 5 && ratingMap[party].electorateSeats == 0)
+    .forEach(party => delete quotients[party])
+
+  const seats = {}
+  Object.keys(quotients).map(party => seats[party] = 0)
+
+  for(let i = 0; i < 120; i++) {
+    const party = Object.keys(quotients)
+      .map(party => { return { name: party, percent: quotients[party].dividedPercent }})
+      .reduce((maxParty, party) => maxParty.percent < party.percent ? party : maxParty, { name: undefined, percent: 0 })
+
+    seats[party.name] += 1
+    quotients[party.name].divisor += 2
+    quotients[party.name].dividedPercent = quotients[party.name].fullPercent / quotients[party.name].divisor
+  }
+
+  Object.keys(seats).forEach(party => {
+    ratingMap[party].totalSeats = Math.max(seats[party], ratingMap[party].electorateSeats)
+    ratingMap[party].listSeats = ratingMap[party].totalSeats - ratingMap[party].electorateSeats
+  })
+
+  listSeatsCalculated = true
+}
+
 function handlePathClick(event) {
   const elem = event.target
-  elem.style.fill = ratingToColourMap[selected]
+  const oldRating = colorToRatingMap[rgbToHex(elem.style.fill)]
+  elem.style.fill = ratingMap[selected].color
+
+  ratingMap[oldRating].electorateSeats -= 1
+  ratingMap[selected].electorateSeats += 1
+  // Only update the listSeats if they have previously been calculated
+  if (listSeatsCalculated) {
+    ratingMap[oldRating].listSeats += 1
+    if (ratingMap[selected].listSeats === 0) {
+      // Overhang seat
+      ratingMap[selected].totalSeats += 1
+    } else {
+      ratingMap[selected].listSeats -= 1
+    }
+  }
+
+  setupTable()
 }
 
 function showTooltip(tooltipText) {
@@ -149,9 +242,10 @@ function onChooseFile(event) {
   document.getElementById("import-json").value = null
 }
 
-const rgbToHex = (r, g, b) => {
-  return '#' + [r, g, b].map(x => {
-    const hex = x.toString(16)
+const rgbToHex = (fullRgbString) => {
+  const rgb = fullRgbString.slice(4, fullRgbString.length - 1).split(', ')
+  return '#' + rgb.map(x => {
+    const hex = parseInt(x).toString(16)
     return hex.length === 1 ? '0' + hex : hex
   }).join('')
 }
@@ -164,10 +258,16 @@ function loadRatings(ratings) {
   for (var pathElem of pathElems) {
     const id = pathElem.getAttribute('inkscape:label')
     if (id !== null) {
-      const rgb = pathElem.style.fill.slice(4, pathElem.style.fill.length - 1).split(', ')
-      backupRatings[id] = colourToRatingMap[rgbToHex(parseInt(rgb[0]), parseInt(rgb[1]), parseInt(rgb[2]))]
+      backupRatings[id] = colorToRatingMap[rgbToHex(pathElem.style.fill)]
     }
   }
+
+  Object.keys(ratingMap).forEach(key => {
+    ratingMap[key].electorateSeats = 0
+    ratingMap[key].listSeats = 0
+    ratingMap[key].totalSeats = 0
+    // TODO this shouldn't remove list and total seats
+  })
 
   for (var pathElem of pathElems) {
     const id = pathElem.getAttribute('inkscape:label')
@@ -177,13 +277,15 @@ function loadRatings(ratings) {
         console.error(`Electorate with id "${id}" missing from JSON file.`)
         loadRatings(backupRatings)
         return
-      } else if (!Object.keys(ratingToColourMap).includes(ratings[id])) {
+      } else if (!Object.keys(ratingMap).includes(ratings[id])) {
         alert(`Invalid rating "${ratings[id]}" for electorate with id "${id}".\n\nThe valid ratings are "close-race", "nat", "lab", "act", "grn", "tpm", "nzf", and "top".`)
         console.error(`Invalid rating "${ratings[id]}" for electorate with id "${id}".\n\nThe valid ratings are "close-race", "nat", "lab", "act", "grn", "tpm", "nzf", and "top".`)
         loadRatings(backupRatings)
         return
       } else {
-        pathElem.style.fill = ratingToColourMap[ratings[id]]
+        pathElem.style.fill = ratingMap[ratings[id]].color
+        ratingMap[ratings[id]].seats += 1
+        // TODO need to handle list seats and total seats
       }
     }
   }
@@ -194,15 +296,13 @@ function importJson() {
 }
 
 function exportJson() {
-  // TODO sort this
   var pathElems = document.querySelectorAll("path")
   var json = {}
 
   for (var pathElem of pathElems) {
     const id = pathElem.getAttribute('inkscape:label')
     if (id !== null) {
-      const rgb = pathElem.style.fill.slice(4, pathElem.style.fill.length - 1).split(', ')
-      json[id] = colourToRatingMap[rgbToHex(parseInt(rgb[0]), parseInt(rgb[1]), parseInt(rgb[2]))]
+      json[id] = colorToRatingMap[rgbToHex(pathElem.style.fill)]
     }
   }
 
@@ -219,7 +319,7 @@ function exportJson() {
 function capture() {
   var element = document.getElementById("to-export")
   element.style.width = '1500px'
-  html2canvas(element, {backgroundColor: '#EEE', height: 1220, width: 1500, scale: 4}).then(canvas => {
+  html2canvas(element, {backgroundColor: '#EEE', height: 1230, width: 1500, scale: 4}).then(canvas => {
       canvas.toDataURL('image/png')
       var a = document.createElement("a")
       a.href = canvas.toDataURL("image/png")

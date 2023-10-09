@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width">
   <title>NZ Electorates</title>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik">
-  <link rel="stylesheet" href="styles.css?v=2" />
-  <script src="./main.js?v=4"></script>
+  <link rel="stylesheet" href="styles.css?v=3" />
+  <script src="./main.js?v=5"></script>
   <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
   <!-- Google tag (gtag.js) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-E0J9QM5K43"></script>
@@ -19,7 +19,7 @@
 </head>
 <body onload="handlePageLoad()">
   <h1>Interactive Electorate Map</h1>
-  <div class="version">v0.3.1</div>
+  <div class="version">v0.4.0</div>
   <div class="header">
     <div class="desktop-header">
       <div class="button" onclick="goToTextTool()">
@@ -52,6 +52,7 @@
   </div>
   <div id="to-export">
     <div id="svg"></div>
+    <div id="table"></div>
     <span id="disclaimer">
       Original map created by <a href="https://commons.wikimedia.org/wiki/User:Erinthecute">Erinthecute</a> on Wikipedia.<br/>
       Map altered and interactive tool created by Joshua Hindley (@JHindleyNZ).<br/>
@@ -64,8 +65,8 @@
       <div class="help-title">Help</div>
       <div class="help-text">
         To use this tool click one of the six coloured buttons at the top of the page and then click an electorate to update its rating.<br/>
-        These colours represent <span id="close-race">Close Race</span>, <span id="nat">National</span>, <span id="lab">Labour</span>,
-        <span id="act">ACT</span>, <span id="grn">Green</span>, <span id="tpm">Te Pāti Māori</span>, <span id="nzf">NZ First</span>, and <span id="top">TOP</span>, respectively.<br/>
+        These colours represent <span class="close-race">Close Race</span>, <span class="nat">National</span>, <span class="lab">Labour</span>,
+        <span class="act">ACT</span>, <span class="grn">Green</span>, <span class="tpm">Te Pāti Māori</span>, <span class="nzf">NZ First</span>, and <span class="top">TOP</span>, respectively.<br/>
         Once you have finished updating the electorates, click the 'EXPORT RATINGS (PNG)' button to export a PNG of your ratings.
       <div class="close-modal">x</div>
     </div>

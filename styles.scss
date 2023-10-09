@@ -1,22 +1,4 @@
-$close-race: #767171;
-$safe-nat: #065BAA;
-$likely-nat: #0986F7;
-$lean-nat: #8FC8FB;
-$safe-lab: #D82C20;
-$likely-lab: #E7695F;
-$lean-lab: #F1A7A1;
-$safe-act: #FFDF00;
-$likely-act: #FFED69;
-$lean-act: #FFF9C9;
-$safe-grn: #4BB965;
-$likely-grn: #7BCB8E;
-$lean-grn: #AFDFBA;
-$safe-tpm-left: #000;
-$safe-tpm-right: #C12026;
-$likely-tpm-left: #3B3838;
-$likely-tpm-right: #E0444B;
-$lean-tpm-left: #AFABAB;
-$lean-tpm-right: #E8747A;
+$light-text-color: #FFF;
 $dark-text-color: #000;
 
 $fixed-width-below: 1320px;
@@ -104,11 +86,10 @@ h1 {
 }
 
 #tooltip {
-  // visibility: hidden;
   opacity: 0;
   width: 200px;
   background-color: #555;
-  color: #fff;
+  color: $light-text-color;
   text-align: center;
   border-radius: 6px;
   padding: 8px 0;
@@ -119,7 +100,12 @@ h1 {
 
 #svg {
   margin-top: 50px;
+  margin-bottom: 20px;
   width: 100%;
+}
+
+#to-export {
+  margin-bottom: 30px;
 }
 
 .version {
@@ -162,7 +148,7 @@ h1 {
       line-height: 24px;
       span {
         padding: 2px;
-        color: white;
+        color: $light-text-color;
       }
     }
 
@@ -175,37 +161,68 @@ h1 {
   }
 }
 
+#table {
+  position: absolute;
+  // left: 1100px;
+  left: 1200px;
+  top: 1060px;
+  z-index: 5;
+
+  .line {
+    display: flex;
+    // width: 440px;
+    width: 200px;
+    margin-top: 4px;
+
+    .party {
+      flex-grow: 1;
+    }
+
+    [class^="seats"] {
+      width: 80px;
+      margin-left: 10px;
+    }
+  }
+}
+
 div, span {
-  &#close-race {
+  &#close-race, &.close-race {
     background-color: #767171;
+    color: $light-text-color;
   }
 
-  &#nat {
+  &#nat, &.nat {
     background-color: #1e4882;
+    color: $light-text-color;
   }
 
-  &#lab {
+  &#lab, &.lab {
     background-color: #d00a12;
+    color: $light-text-color;
   }
 
-  &#act {
+  &#act, &.act {
     background-color: #f3ca1e;
     color: $dark-text-color;
   }
 
-  &#grn {
+  &#grn, &.grn {
     background-color: #0ca747;
+    color: $light-text-color;
   }
 
-  &#tpm {
+  &#tpm, &.tpm {
     background-color: #c37d23;
+    color: $light-text-color;
   }
 
-  &#nzf {
+  &#nzf, &.nzf {
     background-color: #000000;
+    color: $light-text-color;
   }
 
-  &#top {
+  &#top, &.top {
     background-color: #09B598;
+    color: $light-text-color;
   }
 }
