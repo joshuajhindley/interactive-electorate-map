@@ -289,6 +289,7 @@ function loadRatings(ratings) {
       }
     }
   }
+  setupTable()
 }
 
 function importJson() {
@@ -318,7 +319,9 @@ function exportJson() {
 
 function capture() {
   var element = document.getElementById("to-export")
+  var table = document.getElementById('table')
   element.style.width = '1500px'
+  table.style.left = '1200px'
   html2canvas(element, {backgroundColor: '#EEE', height: 1230, width: 1500, scale: 4}).then(canvas => {
       canvas.toDataURL('image/png')
       var a = document.createElement("a")
@@ -327,4 +330,5 @@ function capture() {
       a.click()
   })
   element.style.width = 'auto'
+  table.style.left = 'calc(15% + 1100px)'
 }

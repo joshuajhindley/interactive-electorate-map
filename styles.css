@@ -137,7 +137,7 @@ h1 {
 
 #table {
   position: absolute;
-  left: 1200px;
+  left: calc(15% + 1100px);
   top: 1060px;
   z-index: 5;
 }
