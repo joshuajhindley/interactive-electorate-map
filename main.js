@@ -284,7 +284,7 @@ function loadRatings(ratings) {
         return
       } else {
         pathElem.style.fill = ratingMap[ratings[id]].color
-        ratingMap[ratings[id]].seats += 1
+        ratingMap[ratings[id]].electorateSeats += 1
         // TODO need to handle list seats and total seats
       }
     }
