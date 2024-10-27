@@ -94,7 +94,7 @@ h1 {
 @media screen and (max-width: 1320px) {
   .version {
     position: absolute;
-    left: 870px;
+    left: 868px;
   }
 }
 
@@ -137,7 +137,7 @@ h1 {
 
 #table {
   position: absolute;
-  left: calc(15% + 1100px);
+  left: max(calc(50% + 400px), 1166px);
   top: 1060px;
   z-index: 5;
 }
@@ -152,6 +152,11 @@ h1 {
 #table .line [class^=seats] {
   width: 80px;
   margin-left: 10px;
+}
+
+div#disclaimer {
+  position: absolute;
+  left: max(calc(50% - 278px),488px);
 }
 
 div#close-race, div.close-race, span#close-race, span.close-race {

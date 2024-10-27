@@ -45,9 +45,26 @@ var colorToRatingMap = {
   "#000000": "nzf",
 }
 
-async function handlePageLoad() {
+async function load2020Results() {
   await fetch('./2020-results.svg').then(resp => resp.text()).then(text => document.getElementById('svg').innerHTML = text)
+  loadElements()
+}
 
+async function load2023Results() {
+  await fetch('./2023-results.svg').then(resp => resp.text()).then(text => document.getElementById('svg').innerHTML = text)
+  loadElements()
+}
+
+async function loadBlankMap() {
+  await fetch('./blank-results.svg').then(resp => resp.text()).then(text => document.getElementById('svg').innerHTML = text)
+  loadElements()
+}
+
+async function handlePageLoad() {
+  await load2023Results()
+}
+
+function loadElements() {
   var optionsElems = document.getElementsByClassName("options")
   for (var optionsElem of optionsElems) {
     for (var option of optionsElem.children) {
@@ -63,6 +80,7 @@ async function handlePageLoad() {
     if (label !== null) {
       const rating = colorToRatingMap[rgbToHex(pathElem.style.fill)]
       ratingMap[rating].electorateSeats += 1
+      ratingMap[rating].totalSeats += 1
 
       const tooltipText = specialNameMap[label] || formatLabel(label)
       pathElem.setAttribute('onclick', "handlePathClick(event)")
@@ -78,8 +96,8 @@ function setupTable() {
   table.replaceChildren()
 
   const orderedKeys = Object.keys(ratingMap)
-    .filter(rating => ratingMap[rating].electorateSeats > 0 && rating !== "close-race")
-    .sort((rating1, rating2) => ratingMap[rating2].electorateSeats - ratingMap[rating1].electorateSeats)
+    .filter(rating => ratingMap[rating].totalSeats > 0 && rating !== "close-race")
+    .sort((rating1, rating2) => ratingMap[rating2].totalSeats - ratingMap[rating1].totalSeats)
   orderedKeys.unshift('titles')
 
   for(let key of orderedKeys) {
@@ -97,15 +115,19 @@ function setupTable() {
     div.innerHTML = key === 'titles' ? "Electorate Seats" : ratingMap[key].electorateSeats
     line.appendChild(div)
 
-    // div = document.createElement('div')
-    // div.className = `seats-${key}`
-    // div.innerHTML = key === 'titles' ? "List Seats" : ratingMap[key].listSeats
-    // line.appendChild(div)
+    if (listSeatsCalculated) {
 
-    // div = document.createElement('div')
-    // div.className = `seats-${key}`
-    // div.innerHTML = key === 'titles' ? "Total Seats" : ratingMap[key].totalSeats
-    // line.appendChild(div)
+      div = document.createElement('div')
+      div.className = `seats-${key}`
+      div.innerHTML = key === 'titles' ? "List Seats" : ratingMap[key].listSeats
+      line.appendChild(div)
+  
+      div = document.createElement('div')
+      div.className = `seats-${key}`
+      div.innerHTML = key === 'titles' ? "Total Seats" : ratingMap[key].totalSeats
+      line.appendChild(div)
+    }
+
   }
 }
 
@@ -117,14 +139,14 @@ function formatLabel(label) {
    return splitStr.join(' ')
 }
 
-function seatCalculator() {
+function seatCalculator(nat, lab, grn, act, nzf, tpm) {
   let quotients = {
-    act: { fullPercent: 10, dividedPercent: 10, divisor: 1 },
-    lab: { fullPercent: 28, dividedPercent: 28, divisor: 1 },
-    grn: { fullPercent: 15, dividedPercent: 15, divisor: 1 },
-    tpm: { fullPercent: 3.01, dividedPercent: 3.01, divisor: 1 },
-    nzf: { fullPercent: 6.02, dividedPercent: 6.02, divisor: 1 },
-    nat: { fullPercent: 35, dividedPercent: 35, divisor: 1 },
+    act: { fullPercent: act, dividedPercent: act, divisor: 1 },
+    lab: { fullPercent: lab, dividedPercent: lab, divisor: 1 },
+    grn: { fullPercent: grn, dividedPercent: grn, divisor: 1 },
+    tpm: { fullPercent: tpm, dividedPercent: tpm, divisor: 1 },
+    nzf: { fullPercent: nzf, dividedPercent: nzf, divisor: 1 },
+    nat: { fullPercent: nat, dividedPercent: nat, divisor: 1 },
   }
 
   Object.keys(quotients)
@@ -150,6 +172,7 @@ function seatCalculator() {
   })
 
   listSeatsCalculated = true
+  setupTable()
 }
 
 function handlePathClick(event) {
@@ -285,10 +308,13 @@ function loadRatings(ratings) {
       } else {
         pathElem.style.fill = ratingMap[ratings[id]].color
         ratingMap[ratings[id]].electorateSeats += 1
-        // TODO need to handle list seats and total seats
+        ratingMap[ratings[id]].totalSeats += 1
+        // TODO need to handle list seats if already calculated
       }
     }
   }
+
+  listSeatsCalculated = false
   setupTable()
 }
 
