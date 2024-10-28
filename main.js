@@ -41,8 +41,16 @@ var colorToRatingMap = {
   "#0ca747": "grn",
   "#f3ca1e": "act",
   "#c37d23": "tpm",
-  "#09B598": "top",
+  "#09b598": "top",
   "#000000": "nzf",
+}
+
+const rgbToHex = (fullRgbString) => {
+  const rgb = fullRgbString.slice(4, fullRgbString.length - 1).split(', ')
+  return '#' + rgb.map(x => {
+    const hex = parseInt(x).toString(16)
+    return hex.length === 1 ? '0' + hex : hex
+  }).join('')
 }
 
 async function load2020Results() {
@@ -61,6 +69,19 @@ async function loadBlankMap() {
 }
 
 async function handlePageLoad() {
+  // Toggle dropdown open/close when dropdown button is clicked
+  document.getElementById("btn").addEventListener("click", function (e) {
+    e.stopPropagation()
+    toggleDropdown()
+  })
+
+  // Close dropdown when dom element is clicked
+  document.documentElement.addEventListener("click", function () {
+    if (document.getElementById("dropdown").classList.contains("show")) {
+      toggleDropdown()
+    }
+  })
+
   await load2023Results()
 }
 
@@ -74,6 +95,7 @@ function loadElements() {
     }
   }
 
+  resetSeats()
   var pathElems = document.querySelectorAll("path")
   for (var pathElem of pathElems) {
     const label = pathElem.getAttribute('inkscape:label')
@@ -91,6 +113,17 @@ function loadElements() {
   setupTable()
 }
 
+function resetSeats() {
+  ratingMap['close-race'] = { electorateSeats: 0, color: "#767171" }
+  ratingMap.lab = { electorateSeats: 0, listSeats: 0, totalSeats: 0, color: "#d00a12", fullName: "Labour" }
+  ratingMap.nat = { electorateSeats: 0, listSeats: 0, totalSeats: 0, color: "#1e4882", fullName: "National" }
+  ratingMap.grn = { electorateSeats: 0, listSeats: 0, totalSeats: 0, color: "#0ca747", fullName: "Green" }
+  ratingMap.act = { electorateSeats: 0, listSeats: 0, totalSeats: 0, color: "#f3ca1e", fullName: "ACT" }
+  ratingMap.tpm = { electorateSeats: 0, listSeats: 0, totalSeats: 0, color: "#c37d23", fullName: "Te Pāti Māori" }
+  ratingMap.top = { electorateSeats: 0, listSeats: 0, totalSeats: 0, color: "#09B598", fullName: "TOP" }
+  ratingMap.nzf = { electorateSeats: 0, listSeats: 0, totalSeats: 0, color: "#000000", fullName: "NZ First" }
+}
+
 function setupTable() {
   const table = document.getElementById('table')
   table.replaceChildren()
@@ -98,6 +131,12 @@ function setupTable() {
   const orderedKeys = Object.keys(ratingMap)
     .filter(rating => ratingMap[rating].totalSeats > 0 && rating !== "close-race")
     .sort((rating1, rating2) => ratingMap[rating2].totalSeats - ratingMap[rating1].totalSeats)
+
+  if (orderedKeys.length === 0) {
+    // do not display the table if there are no seats allocated
+    return
+  }
+
   orderedKeys.unshift('titles')
 
   for(let key of orderedKeys) {
@@ -116,7 +155,6 @@ function setupTable() {
     line.appendChild(div)
 
     if (listSeatsCalculated) {
-
       div = document.createElement('div')
       div.className = `seats-${key}`
       div.innerHTML = key === 'titles' ? "List Seats" : ratingMap[key].listSeats
@@ -127,7 +165,6 @@ function setupTable() {
       div.innerHTML = key === 'titles' ? "Total Seats" : ratingMap[key].totalSeats
       line.appendChild(div)
     }
-
   }
 }
 
@@ -137,6 +174,12 @@ function formatLabel(label) {
       splitStr[i] = splitStr[i].charAt(0).toUpperCase() + splitStr[i].substring(1)  
    }
    return splitStr.join(' ')
+}
+
+// Toggle dropdown function
+const toggleDropdown = function () {
+  document.getElementById("dropdown").classList.toggle("show")
+  document.getElementById("arrow").classList.toggle("arrow")
 }
 
 function seatCalculator(nat, lab, grn, act, nzf, tpm) {
@@ -156,7 +199,7 @@ function seatCalculator(nat, lab, grn, act, nzf, tpm) {
   const seats = {}
   Object.keys(quotients).map(party => seats[party] = 0)
 
-  for(let i = 0; i < 120; i++) {
+  for (let i = 0; i < 120; i++) {
     const party = Object.keys(quotients)
       .map(party => { return { name: party, percent: quotients[party].dividedPercent }})
       .reduce((maxParty, party) => maxParty.percent < party.percent ? party : maxParty, { name: undefined, percent: 0 })
@@ -184,6 +227,7 @@ function handlePathClick(event) {
   ratingMap[selected].electorateSeats += 1
   // Only update the listSeats if they have previously been calculated
   if (listSeatsCalculated) {
+    // TODO this should not add list seats if it was an overhang electorate seat that was removed
     ratingMap[oldRating].listSeats += 1
     if (ratingMap[selected].listSeats === 0) {
       // Overhang seat
@@ -191,6 +235,9 @@ function handlePathClick(event) {
     } else {
       ratingMap[selected].listSeats -= 1
     }
+  } else {
+    ratingMap[oldRating].totalSeats -= 1
+    ratingMap[selected].totalSeats += 1
   }
 
   setupTable()
@@ -265,14 +312,6 @@ function onChooseFile(event) {
   document.getElementById("import-json").value = null
 }
 
-const rgbToHex = (fullRgbString) => {
-  const rgb = fullRgbString.slice(4, fullRgbString.length - 1).split(', ')
-  return '#' + rgb.map(x => {
-    const hex = parseInt(x).toString(16)
-    return hex.length === 1 ? '0' + hex : hex
-  }).join('')
-}
-
 function loadRatings(ratings) {
 
   var pathElems = document.querySelectorAll("path")
@@ -344,10 +383,12 @@ function exportJson() {
 }
 
 function capture() {
-  var element = document.getElementById("to-export")
+  var element = document.getElementById('to-export')
   var table = document.getElementById('table')
+  var dislaimer = document.getElementById('disclaimer')
   element.style.width = '1500px'
   table.style.left = '1200px'
+  dislaimer.style.position = 'static'
   html2canvas(element, {backgroundColor: '#EEE', height: 1230, width: 1500, scale: 4}).then(canvas => {
       canvas.toDataURL('image/png')
       var a = document.createElement("a")
@@ -356,5 +397,6 @@ function capture() {
       a.click()
   })
   element.style.width = 'auto'
-  table.style.left = 'calc(15% + 1100px)'
+  table.style.left = 'max(calc(50% + 400px), 1166px)'
+  dislaimer.style.position = 'absolute'
 }
