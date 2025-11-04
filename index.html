@@ -1,98 +1,13 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width">
-  <title>NZ Electorates</title>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto">
-  <link rel="stylesheet" href="styles.css?v=6" />
-  <link rel="stylesheet" href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" />
-  <script src="./main.js?v=7"></script>
-  <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
-  <!-- Google tag (gtag.js) -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-E0J9QM5K43"></script>
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-    gtag('config', 'G-E0J9QM5K43');
-  </script>
-</head>
-<body onload="handlePageLoad()">
-  <h1>Interactive Electorate Map</h1>
-  <div class="version">v0.5.0</div>
-  <div class="header">
-    <div class="desktop-header">
-      <div class="dropdown-container">
-        <div class="dropdown-button button" id="btn">
-          Save/Load
-          <i class="bx bx-chevron-down" id="arrow"></i>
-        </div>
-        <div class="dropdown" id="dropdown">
-          <div onclick="load2023Results()">
-            <i class="bx bx-import"></i>
-            Load 2023 Results
-          </div>
-          <div onclick="load2020Results()">
-            <i class="bx bx-import"></i>
-            Load 2020 Results
-          </div>
-          <div onclick="loadBlankMap()">
-            <i class="bx bx-import"></i>
-            Load Blank Map
-          </div>
-          <div id="import-ratings" onclick="importJson()">
-            <i class="bx bx-import"></i>
-            Import Custom Ratings (JSON)
-          </div>
-          <div onclick="exportJson()">
-            <i class="bx bx-export"></i>
-            Export Ratings (JSON)
-          </div>
-        </div>
-      </div>
-      <div class="options">
-        <div id="close-race" class="close-race selected"></div>
-        <div id="nat"></div>
-        <div id="lab"></div>
-        <div id="act"></div>
-        <div class="help" onclick="showHelpModal()">?</div>
-        <div id="grn"></div>
-        <div id="tpm"></div>
-        <div id="nzf"></div>
-        <div id="top"></div>
-      </div>
-      <div class="button" onclick="capture()">
-        Take Screenshot
-      </div>
-    </div>
-  </div>
-  <div class="hidden" style="display: none;">
-    <input id="import-json" type="file" accept="application/json" onchange="onChooseFile(event)"/>
-  </div>
-  <div id="to-export">
-    <div id="svg"></div>
-    <div id="table"></div>
-    <div id="disclaimer">
-      <span>
-        Original map created by <a href="https://commons.wikimedia.org/wiki/User:Erinthecute">Erinthecute</a> on Wikipedia.<br/>
-        Map altered and interactive tool created by Joshua Hindley (@JHindleyNZ).<br/>
-        Licensed under <a href="https://creativecommons.org/licenses/by-sa/4.0/">Creative Commons Attribution-ShareAlike (CC BY-SA) 4.0</a>
-      </span>
-    </div>
-  </div>
-  <!-- TODO add calculator here -->
-  <div id="tooltip"></div>
-  <div class="modal-container">
-    <div class="modal">
-      <div class="help-title">Help</div>
-      <div class="help-text">
-        To use this tool click one of the six coloured buttons at the top of the page and then click an electorate to update its rating.<br/>
-        These colours represent <span class="close-race">Close Race</span>, <span class="nat">National</span>, <span class="lab">Labour</span>,
-        <span class="act">ACT</span>, <span class="grn">Green</span>, <span class="tpm">Te Pāti Māori</span>, <span class="nzf">NZ First</span>, and <span class="top">TOP</span>, respectively.<br/>
-        Once you have finished updating the electorates, click the 'EXPORT RATINGS (PNG)' button to export a PNG of your ratings.
-      <div class="close-modal">x</div>
-    </div>
-  </div>
-</body>
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/png" href="/map.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0 maximum-scale=1.0, user-scalable=no" />
+    <title>New Zealand Electorate Map</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
 </html>
