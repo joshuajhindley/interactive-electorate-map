@@ -71,15 +71,17 @@ export const ElectorateMap: React.FC<Props> = ({ isMobile }) => {
 
   // Load JSON data
   useEffect(() => {
-    fetch('/data/general-electorates.json')
+    const baseUrl = import.meta.env.BASE_URL
+
+    fetch(`${baseUrl}/data/general-electorates.json`)
       .then((r) => r.json())
       .then(setGeneralTopology)
 
-    fetch('/data/maori-electorates.json')
+    fetch(`${baseUrl}/data/maori-electorates.json`)
       .then((r) => r.json())
       .then(setMaoriTopology)
 
-    fetch('/data/electorate-stats.json')
+    fetch(`${baseUrl}/data/electorate-stats.json`)
       .then((r) => r.json())
       .then((json) => {
         setElectorateStats(json)
