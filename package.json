@@ -3,15 +3,19 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "homepage": "https://hindley.me/interactive-electorate-map",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d dist",
     "lint": "eslint .",
     "preview": "vite preview"
   },
   "dependencies": {
     "@turf/rewind": "^7.2.0",
     "d3": "^7.9.0",
+    "gh-pages": "^6.3.0",
     "html-to-image": "^1.11.13",
     "martinez-polygon-clipping": "^0.7.4",
     "react": "^19.1.1",
