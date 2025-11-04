@@ -76,8 +76,11 @@ export const Footer: React.FC<{}> = () => {
             <a target='_blank' href='https://en.wikipedia.org/wiki/MIT_License'>
               MIT License
             </a>
-            .{/* TODO add link to license file */}
-            <br />© 2025 Joshua Hindley. See the license file for details.
+            <br />© 2025 Joshua Hindley. See the{' '}
+            <a target='_blank' href='https://github.com/joshuajhindley/interactive-electorate-map/blob/master/LICENSE'>
+              license file
+            </a>{' '}
+            for details.
           </p>
           <button onClick={() => setShowLicense(false)}>Close</button>
         </Modal>
