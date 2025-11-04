@@ -1,8 +1,9 @@
 {
   "name": "nz-electorate-map",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
+  "license": "MIT",
   "homepage": "https://hindley.me/interactive-electorate-map",
   "scripts": {
     "dev": "vite",
