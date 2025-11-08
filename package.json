@@ -1,13 +1,13 @@
 {
   "name": "nz-electorate-map",
   "private": true,
-  "version": "1.0.3",
+  "version": "1.0.4",
   "type": "module",
   "license": "MIT",
   "homepage": "https://hindley.me/interactive-electorate-map",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build && node scripts/inline-css.ts",
+    "build": "tsc -b && vite build && node scripts/inline-css.ts && node scripts/preload-js.ts",
     "predeploy": "npm run build",
     "deploy": "gh-pages -d dist",
     "lint": "eslint .",
