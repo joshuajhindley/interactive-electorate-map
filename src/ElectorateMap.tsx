@@ -7,7 +7,6 @@ import { exportSvg, getFill, hashString, slugify } from './electorate-map-utils'
 import type { ElectorateFeature, Party, PartyAssignments } from './electorate-map-types'
 import './ElectorateMap.scss'
 import { allParties, parties } from './electorate-map-constants'
-import Swal from 'sweetalert2'
 
 type Topology = any
 
@@ -49,6 +48,7 @@ export const ElectorateMap: React.FC<Props> = ({ isMobile }) => {
   const [tooltip, setTooltip] = useState<Nullable<string>>(null)
   const [showHint, setShowHint] = useState<boolean>(false)
   const [hideMap, setHideMap] = useState<boolean>(false)
+  const [mobileAcknowledged, setMobileAcknowledged] = useState<boolean>(false)
   const svgRef = useRef<Nullable<SVGSVGElement>>(null)
   const gRef = useRef<Nullable<SVGGElement>>(null)
   const zoomRef = useRef<Nullable<d3.ZoomBehavior<SVGSVGElement, unknown>>>(null)
@@ -91,17 +91,6 @@ export const ElectorateMap: React.FC<Props> = ({ isMobile }) => {
           setElectorateStats(json)
         })
     })
-  }, [])
-
-  useEffect(() => {
-    if (isMobile) {
-      Swal.fire({
-        icon: 'info',
-        text: 'While this page is usable on mobile, it is primarily intended and optimised for use on desktop.',
-        confirmButtonText: 'Acknowledge',
-        confirmButtonColor: 'dodgerblue',
-      })
-    }
   }, [])
 
   useEffect(() => {
@@ -284,6 +273,11 @@ export const ElectorateMap: React.FC<Props> = ({ isMobile }) => {
 
   return (
     <div className={`main-container ${isMobile ? 'mobile' : 'desktop'}`}>
+      {isMobile && !mobileAcknowledged && (
+        <Modal onClose={() => setMobileAcknowledged(true)}>
+          <div>Please note that while this page is usable on mobile, it is primarily intended and optimised for use on desktop devices.</div>
+        </Modal>
+      )}
       <div className='electorate-information'>
         <strong>Electorate Information</strong>
         {tooltip ? (
@@ -460,12 +454,7 @@ const Options: React.FC<OptionsProps> = (props) => {
       props.setPartyAssignments(parsed)
       setShowLoadModal(false)
     } catch {
-      Swal.fire({
-        icon: 'error',
-        text: 'The selected file was not a valid ratings file.',
-        confirmButtonText: 'Acknowledge',
-        confirmButtonColor: 'dodgerblue',
-      })
+      alert('The selected file was not a valid ratings file.')
     }
   }
 

@@ -12,8 +12,6 @@ export type Parties = {
   [partyId: string]: Party
 }
 
-export type Selection = d3.Selection<any, unknown, null, undefined>
-
 export type TransformGroup = {
   ids: string[]
   scale: number
