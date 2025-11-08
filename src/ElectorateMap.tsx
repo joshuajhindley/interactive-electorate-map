@@ -366,7 +366,7 @@ export const ElectorateMap: React.FC<Props> = ({ isMobile }) => {
           ref={svgRef}
           className='main-svg'
           width={isMobile ? '100%' : width}
-          height={isMobile ? 'auto' : height}
+          height={isMobile ? '100%' : height}
           viewBox={`0 0 ${width} ${height}`}
           role='img'
           aria-label='Interactive NZ electorates map, click an electorate to change rating'
