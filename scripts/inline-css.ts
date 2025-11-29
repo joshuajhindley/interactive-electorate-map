@@ -6,7 +6,9 @@ const assetsDir = path.join(distDir, 'assets')
 
 // Find the CSS file with a hash
 const cssFile = fs.readdirSync(assetsDir).find((f) => f.endsWith('.css'))
-if (!cssFile) throw new Error('No CSS file found')
+if (!cssFile) {
+  throw new Error('No CSS file found')
+}
 
 const css = fs.readFileSync(path.join(assetsDir, cssFile), 'utf8')
 const htmlPath = path.join(distDir, 'index.html')

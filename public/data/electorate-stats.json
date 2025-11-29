@@ -10,7 +10,7 @@
       {"lab": 32.13},
       {"nat": 27.16}
     ],
-    "effects": ["Green: +0.8pp", "National: -0.6pp"]
+    "effects": ["Green: +0.83pp", "National: -0.77pp"]
   },
   "banks-peninsula": {
     "2023": [
@@ -35,7 +35,7 @@
       {"nat": 52.46},
       {"lab": 41.43}
     ],
-    "effects": ["National: +5.2pp", "Labour: -4.9pp"]
+    "effects": ["National: +5.78pp", "Act: +0.31pp", "Labour: -5.67pp"]
   },
   "christchurch-central": {
     "2023": [
@@ -48,7 +48,7 @@
       {"nat": 24.36},
       {"gre": 6.36}
     ],
-    "effects": ["Labour: +0.3pp"]
+    "effects": ["Negligible"]
   },
   "christchurch-east": {
     "2023": [
@@ -61,7 +61,7 @@
       {"nat": 19.81},
       {"gre": 6.82}
     ],
-    "effects": ["Labour: +0.5pp", "Green: +0.5pp", "National: -0.5pp"]
+    "effects": ["Green: +0.44pp", "Labour: +0.33pp", "National: -0.62pp"]
   },
   "coromandel": {
     "2023": [
@@ -112,7 +112,7 @@
       {"lab": 30.71},
       {"gre": 6.22}
     ],
-    "effects": ["Labour: +0.4pp", "National: -0.4pp"]
+    "effects": ["Labour: +0.47pp", "National: -0.59pp"]
   },
   "epsom": {
     "2023": [
@@ -125,7 +125,7 @@
       {"lab": 24.75},
       {"nat": 15.41}
     ],
-    "effects": ["Labour: +0.9pp", "National: -0.6pp", "ACT: -1.1pp"]
+    "effects": ["Labour: +0.76pp", "Green: +0.60pp", "National: -0.52pp", "ACT: -1.05pp"]
   },
   "glendene": {
     "2023": [
@@ -138,7 +138,7 @@
       {"nat": 18.45},
       {"gre": 6.69}
     ],
-    "effects": ["Formerly known as Kelston", "National: +2.8pp", "Green: -0.6pp", "Labour: -1.9pp"]
+    "effects": ["Formerly known as Kelston", "National: +2.83pp", "Green: -0.71pp", "Labour: -2.16pp"]
   },
   "hamilton-east": {
     "2023": [
@@ -176,7 +176,7 @@
       {"nat": 29.11},
       {"gre": 5.66}
     ],
-    "effects": ["Formerly known as Te Atatū", "Labour: +1.0pp", "National: -0.3pp", "Green: -0.4pp"]
+    "effects": ["Formerly known as Te Atatū", "Labour: +0.96pp", "National: -0.40pp", "Green: -0.40pp"]
   },
   "hutt-south": {
     "2023": [
@@ -188,7 +188,7 @@
       {"lab": 50.00},
       {"nat": 41.59}
     ],
-    "effects": ["Labour: +0.3pp", "National: -0.2pp"]
+    "effects": ["Negligible"]
   },
   "ilam": {
     "2023": [
@@ -202,7 +202,7 @@
       {"nat": 37.69},
       {"gre": 7.51}
     ],
-    "effects": ["Labour: +0.2pp"]
+    "effects": ["Negligible"]
   },
   "invercargill": {
     "2023": [
@@ -214,7 +214,7 @@
       {"nat": 44.66},
       {"lab": 44.10}
     ],
-    "effects": ["National: +0.5pp"]
+    "effects": ["Negligible"]
   },
   "kaikoura": {
     "2023": [
@@ -246,7 +246,7 @@
       {"act": 6.56},
       {"gre": 6.38}
     ],
-    "effects": ["National: +1.0pp", "Labour: -1.0pp"]
+    "effects": ["National: +0.88pp", "Green: -0.33pp", "Labour: -1.02pp"]
   },
   "kapiti": {
     "2023": [
@@ -258,7 +258,7 @@
       {"lab": 47.81},
       {"nat": 41.27}
     ],
-    "effects": ["Formerly known as Ōtaki", "Labour: +0.8pp", "National: -1.3pp"]
+    "effects": ["Formerly known as Ōtaki", "Green: +1.38pp", "Labour: +0.38pp", "National: -1.12pp"]
   },
   "kenepuru": {
     "2023": [
@@ -271,7 +271,7 @@
       {"nat": 22.90},
       {"gre": 9.59}
     ],
-    "effects": ["Mana and Ōhāriu combined", "Mana vote share used above", "Labour: +0.5pp", "National: +0.4pp"]
+    "effects": ["Mana and Ōhāriu combined", "Mana vote share used above", "Labour: +0.44pp", "NZ First: -0.50pp"]
   },
   "mangere":  {
     "2023": [
@@ -284,7 +284,7 @@
       {"nat": 11.87},
       {"gre": 6.17}
     ],
-    "effects": ["National: +0.4pp"]
+    "effects": ["National: +0.38pp", "Labour: -0.36pp"]
   },
   "manurewa": {
     "2023": [
@@ -296,7 +296,7 @@
       {"lab": 70.13},
       {"nat": 12.25}
     ],
-    "effects": ["National: +0.7pp"]
+    "effects": ["National: +0.41pp", "Labour: -0.44pp"]
   },
   "maungakiekie": {
     "2023": [
@@ -309,7 +309,7 @@
       {"nat": 41.86},
       {"gre": 7.15}
     ],
-    "effects": ["Labour: +1.1pp", "National: -1.0pp"]
+    "effects": ["Labour: +1.06pp", "National: -1.10pp"]
   },
   "mt-albert": {
     "2023": [
@@ -322,7 +322,7 @@
       {"nat": 19.33},
       {"gre": 5.56}
     ],
-    "effects": ["National: +1.0pp", "Labour: +0.9pp", "Green: -1.6pp"]
+    "effects": ["National: +0.90pp", "Labour: +0.88pp", "Green: -1.70pp"]
   },
   "mt-maunganui": {
     "2023": [
@@ -336,7 +336,7 @@
       {"nat": 44.94},
       {"lab": 37.29}
     ],
-    "effects": ["Formerly known as Bay of Plenty", "Labour: +0.3pp"]
+    "effects": ["Formerly known as Bay of Plenty", "Labour: +0.31pp"]
   },
   "mt-roskill": {
     "2023": [
@@ -350,7 +350,7 @@
       {"nat": 24.08},
       {"gre": 5.92}
     ],
-    "effects": ["National: +1.2pp", "Green: -0.3pp", "Labour: -0.9pp"]
+    "effects": ["National: +1.16pp", "Labour: -1.16pp"]
   },
   "napier": {
     "2023": [
@@ -362,7 +362,7 @@
       {"lab": 51.06},
       {"nat": 37.04}
     ],
-    "effects": ["National: +0.4pp"]
+    "effects": ["Negligible"]
   },
   "nelson": {
     "2023": [
@@ -400,7 +400,7 @@
       {"lab": 37.21},
       {"gre": 6.24}
     ],
-    "effects": ["National: +0.3pp"]
+    "effects": ["Negligible"]
   },
   "northcote": {
     "2023": [
@@ -439,7 +439,7 @@
       {"lab": 73.50},
       {"nat": 13.50}
     ],
-    "effects": ["Formerly known as Panmure-Ōtāhuhu", "Labour: +3.1pp", "Green: -0.9pp", "National: -1.3pp"]
+    "effects": ["Formerly known as Panmure-Ōtāhuhu", "Labour: +2.89pp", "ACT: -0.56pp", "Green: -0.94pp", "National: -1.41pp"]
   },
   "pakuranga": {
     "2023": [
@@ -450,7 +450,7 @@
       {"nat": 57.86},
       {"lab": 30.91}
     ],
-    "effects": ["National: +0.4pp", "Labour: -0.2pp"]
+    "effects": ["Negligible"]
   },
   "palmerston-north":  {
     "2023": [
@@ -464,7 +464,7 @@
       {"nat": 26.47},
       {"gre": 5.42}
     ],
-    "effects": ["National: +1.3pp", "Labour: -1.2pp"]
+    "effects": ["National: +1.30pp", "ACT: +0.41pp", "Labour: -1.47pp"]
   },
   "papakura": {
     "2023": [
@@ -476,7 +476,7 @@
       {"nat": 52.45},
       {"lab": 34.91}
     ],
-    "effects": ["Labour: +1.7pp", "National: -1.3pp"]
+    "effects": ["Labour: +1.63pp", "ACT: -0.34pp", "National: -1.52pp"]
   },
   "port-waikato": {
     "2023": [
@@ -515,7 +515,7 @@
       {"nat": 44.65},
       {"lab": 37.54}
     ],
-    "effects": ["Labour: +2.8pp", "ACT: -1.0pp", "National: -1.5pp"]
+    "effects": ["Labour: +2.81pp", "ACT: -1.00pp", "National: -1.68pp"]
   },
   "remutaka": {
     "2023": [
@@ -527,7 +527,7 @@
       {"lab": 68.57},
       {"nat": 20.46}
     ],
-    "effects": ["National: +0.3pp", "Labour: +0.2pp"]
+    "effects": ["Negligible"]
   },
   "rotorua": {
     "2023": [
@@ -540,7 +540,7 @@
       {"lab": 41.09},
       {"gre": 5.04}
     ],
-    "effects": ["National: +0.4pp"]
+    "effects": ["National: +0.31pp"]
   },
   "selwyn": {
     "2023": [
@@ -552,7 +552,7 @@
       {"nat": 49.55},
       {"lab": 37.82}
     ],
-    "effects": ["National: +0.2pp", "Labour: -0.2pp"]
+    "effects": ["Labour: -0.32pp"]
   },
   "southland": {
     "2023": [
@@ -592,7 +592,7 @@
       {"lab": 53.70},
       {"nat": 32.35}
     ],
-    "effects": ["Labour: +1.3pp", "National: -1.0pp"]
+    "effects": ["Labour: +1.12pp", "National: -1.18pp"]
   },
   "tamaki": {
     "2023": [
@@ -606,7 +606,7 @@
       {"gre": 7.85},
       {"act": 5.18}
     ],
-    "effects": ["Labour: +1.1pp", "National: -0.5pp", "ACT: -0.6pp"]
+    "effects": ["Labour: +1.16pp", "National: -0.57pp", "ACT: -0.65pp"]
   },
   "taranaki-king-country": {
     "2023": [
@@ -620,7 +620,7 @@
       {"act": 5.85},
       {"nco": 5.30}
     ],
-    "effects": ["Labour: +0.4pp", "National: -0.2pp"]
+    "effects": ["Labour: +0.34pp", "National: -0.39pp"]
   },
   "taupo": {
     "2023": [
@@ -647,7 +647,7 @@
       {"nat": 42.76},
       {"lab": 38.53}
     ],
-    "effects": ["National: +0.3pp", "Labour: -0.2pp"]
+    "effects": ["Negligible"]
   },
   "tukituki": {
     "2023": [
@@ -659,7 +659,7 @@
       {"lab": 45.51},
       {"nat": 41.72}
     ],
-    "effects": ["Labour: +0.3pp"]
+    "effects": ["Negligible"]
   },
   "upper-harbour": {
     "2023": [
@@ -673,7 +673,7 @@
       {"nat": 37.70},
       {"gre": 6.17}
     ],
-    "effects": ["National: +3.8pp", "Labour: -3.3pp"]
+    "effects": ["National: +3.88pp", "ACT: +0.49pp", "Green: -0.36pp", "Labour: -3.65pp"]
   },
   "waikato": {
     "2023": [
@@ -723,7 +723,7 @@
       {"nat": 24.97},
       {"gre": 9.04}
     ],
-    "effects": ["Formerly known as New Lynn", "Labour: +1.6pp", "Green: +0.5pp", "National: -2.0pp"]
+    "effects": ["Formerly known as New Lynn", "Labour: +1.54pp", "Green: +0.45pp", "National: -2.17pp"]
   },
   "waitaki": {
     "2023": [
@@ -751,7 +751,7 @@
       {"nat": 14.20},
       {"top": 7.46}
     ],
-    "effects": ["Formerly known as Rongotai", "Green: +1.3pp", "Labour: -0.2pp", "National: -0.7pp"]
+    "effects": ["Formerly known as Rongotai", "Green: 1.09pp", "National: -0.67pp"]
   },
   "wellington-north": {
     "2023": [
@@ -764,7 +764,7 @@
       {"nat": 17.76},
       {"gre": 17.54}
     ],
-    "effects": ["Formerly known as Wellington Central", "National: +4.0pp", "Labour: -0.4pp", "Green: -3.5pp"]
+    "effects": ["Formerly known as Wellington Central", "National: +3.97pp", "Labour: -0.49pp", "Green: -3.46pp"]
   },
   "west-coast-tasman": {
     "2023": [
@@ -792,7 +792,7 @@
       {"lab": 54.32},
       {"nat": 34.37}
     ],
-    "effects": ["National: +0.2pp"]
+    "effects": ["Negligible"]
   },
   "whangaparaoa":  {
     "2023": [
@@ -831,7 +831,7 @@
       {"nat": 24.17},
       {"gre": 5.19}
     ],
-    "effects": ["National: +3.7pp", "Labour: -2.7pp"]
+    "effects": ["National: +3.45pp", "ACT: +0.39pp", "Green: -1.01pp", "Labour: -2.75pp"]
   },
   "hauraki-waikato": {
     "2023": [

@@ -8,7 +8,7 @@ export const Footer: React.FC<{}> = () => {
   return (
     <>
       <footer>
-        Interactive NZ Electorate Map v1.0.4
+        Interactive NZ Electorate Map v1.0.5
         <br />
         Created by Joshua Hindley -{' '}
         <a target='_blank' href='https://twitter.com/jhindleynz'>
@@ -29,11 +29,22 @@ export const Footer: React.FC<{}> = () => {
             <a target='_blank' href='https://x.com/Overhang_AoNZ'>
               The Overhang
             </a>{' '}
-            for letting me use his{' '}
+            for letting me use{' '}
+            <a target='_blank' href='https://x.com/Overhang_AoNZ/status/1994531303929286752'>
+              the data
+            </a>{' '}
+            from his{' '}
             <a target='_blank' href='https://x.com/Overhang_AoNZ/status/1953634192140747254'>
               analysis
             </a>{' '}
             on the effects of the new boundaries for each electorate. Be sure to check out his work if you haven't already.
+            <br />
+            <br />
+            That data is licensed under
+            <br />
+            <a target='_blank' href='https://creativecommons.org/licenses/by-nc-sa/4.0/'>
+              Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International (CC BY-NC-SA 4.0)
+            </a>
           </p>
           <hr />
           <h2>License Information</h2>
