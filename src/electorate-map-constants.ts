@@ -10,12 +10,12 @@ export const parties: Parties = {
   act: { id: 'act', name: 'ACT', color: '#fde401' },
   nzf: { id: 'nzf', name: 'NZ First', color: '#000000' },
   tpm: { id: 'tpm', name: 'Te Pāti Māori', color: '#b2001a' },
-  top: { id: 'top', name: 'Opportunities', color: '#09B598' },
+  top: { id: 'top', name: 'Opportunity', color: '#09B598' },
   unk: { id: 'unk', name: 'None', color: '#ccc' },
 }
 
 /**
- * Currently existing parties and former parties that placed 3rd or better in
+ * Currently existing parties and former parties that received 5% or more in
  * the cadidate vote for an electorate in 2020 or 2023
  */
 export const allParties: Parties = {
