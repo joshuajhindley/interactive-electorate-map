@@ -253,10 +253,10 @@ export const ElectorateMap: React.FC<Props> = ({ isMobile }) => {
   const slugifiedTooltip = useMemo(() => slugify(tooltip ?? ''), [tooltip])
 
   const nonPartyEffects = useMemo(
-    () => (electorateStats?.[slugifiedTooltip]?.effects ?? ['Negligible']).filter((effect) => !effect.match(/National|Labour|Green|ACT/)),
+    () => (electorateStats?.[slugifiedTooltip]?.effects ?? ['Negligible']).filter((effect) => !effect.match(/National|Labour|Green|ACT|NZ First/)),
     [electorateStats, slugifiedTooltip]
   )
-  const partyEffects = useMemo(() => (electorateStats?.[slugifiedTooltip]?.effects ?? []).filter((effect) => effect.match(/National|Labour|Green|ACT/)), [electorateStats, slugifiedTooltip])
+  const partyEffects = useMemo(() => (electorateStats?.[slugifiedTooltip]?.effects ?? []).filter((effect) => effect.match(/National|Labour|Green|ACT|NZ First/)), [electorateStats, slugifiedTooltip])
 
   const exportMapButton = (
     <button
