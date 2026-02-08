@@ -436,8 +436,6 @@ export const ElectorateMap: React.FC<Props> = ({ isMobile }) => {
       .filter(({ seatPercent }) => seatPercent > 50)
   }, [partySeats, totals])
 
-  console.log(workingPartyVotePercentage)
-
   return (
     <div className={`main-container ${isMobile ? 'mobile' : 'desktop'}`}>
       {isMobile && !mobileAcknowledged && (
