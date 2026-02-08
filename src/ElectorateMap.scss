@@ -90,6 +90,36 @@
     width: 100%;
     height: auto;
   }
+
+  .seat-calculator-container {
+    width: 100%;
+    font-size: 11px;
+
+    .party-name {
+      width: 100px;
+    }
+
+    .party-vote {
+      width: 70px;
+      input {
+        width: 40px;
+      }
+    }
+
+    .num-seats {
+      width: 40px;
+    }
+
+    .button-container button {
+      margin-right: 12px;
+    }
+  }
+
+  .checkbox-container {
+    padding: 0 12px 0 30px;
+    margin: 24px 0 0 12px;
+  }
+
 }
 
 .electorate {
@@ -105,6 +135,14 @@
     stroke-width: 2;
     opacity: 0.8;
   }
+}
+
+.hidden-map {
+  opacity: 0;
+  pointer-events: none;
+  position: absolute;
+  left: 0;
+  top: 0;
 }
 
 .hidden {
@@ -213,6 +251,128 @@
     flex-direction: row;
     gap: 8px;
     font-size: 12px;
+    justify-content: space-evenly;
+  }
+}
+
+.seat-calculator-container {
+  width: 525px;
+  height: 700px;
+  margin-bottom: 5.5px;
+  border: 1px solid white;
+  display: flex;
+  flex-direction: column;
+
+  table {
+    margin: 8px;
+    border-spacing: 0 2px;
+
+    .party-box {
+      margin-right: 4px;
+    }
+
+    .party-name {
+      text-align: left;
+      width: 110px;
+    }
+
+    .party-vote {
+      width: 100px;
+      input {
+        width: 60px;
+      }
+    }
+
+    .num-seats {
+      width: 90px;
+    }
+
+    .total-seats {
+      border-top: 1px solid;
+    }
+  }
+  
+  .button-container {
+    width: 100%;
+    flex-direction: row-reverse;
+
+    button {
+      width: 180px;
+      margin: 12px 40px 0 0;
+    }
+  }
+
+  .table-message {
+    margin: auto 22px 8px;
+  }
+}
+
+.checkbox-container {
+  display: block;
+  position: relative;
+  padding: 0 28px 0 30px;
+  margin-top: 20px;
+  height: fit-content;
+  cursor: pointer;
+  user-select: none;
+
+  span {
+    position: absolute;
+    top: 4px;
+    left: 0;
+    height: 16px;
+    width: 16px;
+    border: 1px solid white;
+  }
+
+  input:checked ~ span {
+      &::before, &::after {
+        display: block;
+      }
+  }
+
+  span::before, span::after {
+    content: "";
+    position: absolute;
+    display: none;
+    margin-top: 8px;
+    height: 2px;
+    width: 14px;
+    background: white;
+    transform-origin: center;
+  }
+  
+  span::before {
+    transform: translate(5%, -50%) rotate(45deg);
+  }
+  
+  span::after {
+    transform: translate(5%, -50%) rotate(-45deg);
+  }
+}
+
+.tooltip {
+  position: relative;
+  display: inline-block;
+  border-bottom: 1px dotted white;
+  cursor: help;
+  &:hover .tooltip-text {
+    visibility: visible;
+  }
+
+  .tooltip-text {
+    visibility: hidden;
+    width: 120px;
+    background-color: #242424;
+    border: 1px solid white;
+    color: #fff;
+    text-align: center;
+    border-radius: 6px;
+    padding: 5px 0;
+    position: absolute;
+    left: -125px;
+    top: -4px;
+    z-index: 1;
   }
 }
 

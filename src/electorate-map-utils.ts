@@ -2,7 +2,7 @@ import * as d3 from 'd3'
 import * as htmlToImage from 'html-to-image'
 import * as polygonClipping from 'martinez-polygon-clipping'
 import rewind from '@turf/rewind'
-import type { ElectorateFeature, Parties, PartyAssignments, Path } from './electorate-map-types'
+import type { ElectorateFeature, Parties, PartyAssignments, PartySeats, Path } from './electorate-map-types'
 import { cityGroups } from './electorate-map-constants'
 
 export const getFill = (partyAssignments: PartyAssignments, parties: Parties, id: string) => {
@@ -16,6 +16,14 @@ const macronMap: Record<string, string> = {
   ī: 'i',
   ō: 'o',
   ū: 'u',
+}
+
+export const getCountByValue = (record: Record<string, string>) => {
+  const result = Object.values(record).reduce<Record<string, number>>((acc, value) => {
+    acc[value] = (acc[value] || 0) + 1
+    return acc
+  }, {})
+  return result
 }
 
 export const slugify = (s: string) =>
@@ -44,8 +52,9 @@ export const exportSvg = async (
   generalFeatures: ElectorateFeature[],
   maoriFeatures: ElectorateFeature[],
   partyAssignments: PartyAssignments,
+  partySeats: PartySeats,
   parties: Parties,
-  isMobile: boolean
+  isMobile: boolean,
 ) => {
   const g = d3.select(gRef.current)
 
@@ -85,7 +94,13 @@ export const exportSvg = async (
   g.selectAll<SVGPathElement, unknown>(`path`).remove()
 
   generalPaths.forEach(({ id, d, name: _name }) => {
-    g.append('path').attr('d', d).attr('data-id', id).attr('fill', getFill(partyAssignments, parties, id)).attr('stroke', 'black').attr('stroke-width', 0.4).attr('vector-effect', 'non-scaling-stroke')
+    g.append('path')
+      .attr('d', d)
+      .attr('data-id', id)
+      .attr('fill', getFill(partyAssignments, parties, id))
+      .attr('stroke', 'black')
+      .attr('stroke-width', 0.4)
+      .attr('vector-effect', 'non-scaling-stroke')
   })
 
   const maoriGroup = g.append('g').attr('transform', `translate(${w}, 0)`)
@@ -102,24 +117,22 @@ export const exportSvg = async (
       .attr('vector-effect', 'non-scaling-stroke')
   })
 
-  const partiesAndSeats = Object.values(partyAssignments)
-    .filter((partyId) => partyId !== 'unk')
-    .reduce<Record<string, number>>((acc, partyId) => {
-      acc[partyId] = (acc[partyId] || 0) + 1
-      return acc
-    }, {})
-
-  if (Object.keys(partiesAndSeats).length > 0) {
-    const legend = g.append('g').attr('transform', `translate(${w * 2 - 160}, ${h - (Object.keys(partiesAndSeats).length - 1) * 20 - 80})`)
+  if (Object.values(partySeats).some((value) => value.totalSeats > 0)) {
+    const partiesWithSeats = Object.entries(partySeats).filter(([_, { totalSeats }]) => totalSeats > 0)
+    const legend = g.append('g').attr('transform', `translate(${w * 2 - 260}, ${h - (Object.keys(partiesWithSeats).length - 1) * 20 - 80})`)
     added.push(legend)
 
     legend.append('text').attr('x', 35).attr('y', 0).text('Party').attr('font-size', 14).attr('font-family', 'sans-serif').attr('fill', 'black').attr('font-weight', 'bold')
     legend.append('text').attr('x', 85).attr('y', -8).text('Electorate').attr('font-size', 14).attr('font-family', 'sans-serif').attr('fill', 'black').attr('font-weight', 'bold')
     legend.append('text').attr('x', 100).attr('y', 8).text('Seats').attr('font-size', 14).attr('font-family', 'sans-serif').attr('fill', 'black').attr('font-weight', 'bold')
+    legend.append('text').attr('x', 166).attr('y', -8).text('List').attr('font-size', 14).attr('font-family', 'sans-serif').attr('fill', 'black').attr('font-weight', 'bold')
+    legend.append('text').attr('x', 160).attr('y', 8).text('Seats').attr('font-size', 14).attr('font-family', 'sans-serif').attr('fill', 'black').attr('font-weight', 'bold')
+    legend.append('text').attr('x', 212).attr('y', -8).text('Total').attr('font-size', 14).attr('font-family', 'sans-serif').attr('fill', 'black').attr('font-weight', 'bold')
+    legend.append('text').attr('x', 210).attr('y', 8).text('Seats').attr('font-size', 14).attr('font-family', 'sans-serif').attr('fill', 'black').attr('font-weight', 'bold')
 
-    Object.entries(partiesAndSeats)
-      .sort((entry1, entry2) => (entry1[1] > entry2[1] ? -1 : 1))
-      .forEach(([partyId, seatCount], i) => {
+    partiesWithSeats
+      .sort((entry1, entry2) => (entry1[1].totalSeats > entry2[1].totalSeats ? -1 : 1))
+      .forEach(([partyId, { electorateSeats, listSeats, totalSeats }], i) => {
         const y = (i + 1) * 20
 
         const { name, color } = parties[partyId]
@@ -137,9 +150,27 @@ export const exportSvg = async (
 
         legend
           .append('text')
-          .attr('x', 126 - seatCount.toString().length * 8)
+          .attr('x', 126 - electorateSeats.toString().length * 8)
           .attr('y', y + 12)
-          .text(seatCount)
+          .text(electorateSeats)
+          .attr('font-size', 14)
+          .attr('font-family', 'sans-serif')
+          .attr('fill', 'black')
+
+        legend
+          .append('text')
+          .attr('x', 184 - listSeats.toString().length * 8)
+          .attr('y', y + 12)
+          .text(listSeats)
+          .attr('font-size', 14)
+          .attr('font-family', 'sans-serif')
+          .attr('fill', 'black')
+
+        legend
+          .append('text')
+          .attr('x', 238 - totalSeats.toString().length * 8)
+          .attr('y', y + 12)
+          .text(totalSeats)
           .attr('font-size', 14)
           .attr('font-family', 'sans-serif')
           .attr('fill', 'black')
@@ -255,7 +286,7 @@ export const exportSvg = async (
   try {
     // Export the SVG with duplicates included
     const node = svgRef.current as unknown as HTMLElement
-    const dataUrl = isMobile ? await htmlToImage.toPng(node) : await htmlToImage.toSvg(node)
+    const dataUrl = isMobile ? await htmlToImage.toPng(node, { width: 1050, height: 700 }) : await htmlToImage.toSvg(node, { width: 1050, height: 700 })
 
     const link = document.createElement('a')
     link.download = 'electoral-map'

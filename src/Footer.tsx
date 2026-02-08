@@ -8,7 +8,7 @@ export const Footer: React.FC<{}> = () => {
   return (
     <>
       <footer>
-        Interactive NZ Electorate Map v1.0.7
+        Interactive NZ Electorate Map v1.1.0
         <br />
         Created by Joshua Hindley -{' '}
         <a target='_blank' href='https://twitter.com/jhindleynz'>
@@ -87,7 +87,7 @@ export const Footer: React.FC<{}> = () => {
             <a target='_blank' href='https://en.wikipedia.org/wiki/MIT_License'>
               MIT License
             </a>
-            <br />© 2025 Joshua Hindley. See the{' '}
+            <br />© 2026 Joshua Hindley. See the{' '}
             <a target='_blank' href='https://github.com/joshuajhindley/interactive-electorate-map/blob/master/LICENSE'>
               license file
             </a>{' '}

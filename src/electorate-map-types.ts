@@ -12,6 +12,18 @@ export type Parties = {
   [partyId: string]: Party
 }
 
+export type Seats = {
+  partyVotePercentage: number
+  listSeats: number
+  electorateSeats: number
+  totalSeats: number
+  overhang: number
+}
+
+export type PartySeats = {
+  [partyId: string]: Seats
+}
+
 export type TransformGroup = {
   ids: string[]
   scale: number

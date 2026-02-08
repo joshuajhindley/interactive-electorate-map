@@ -1,10 +1,10 @@
-import React, { useMemo, useState, useEffect, useRef, type JSX } from 'react'
+import React, { useMemo, useState, useEffect, useRef, type JSX, type RefObject } from 'react'
 import * as d3 from 'd3'
 import { feature } from 'topojson-client'
 import type { GeometryCollection } from 'topojson-specification'
 import Modal from './Modal'
-import { exportSvg, getFill, hashString, slugify } from './electorate-map-utils'
-import type { ElectorateFeature, Party, PartyAssignments } from './electorate-map-types'
+import { exportSvg, getCountByValue, getFill, hashString, slugify } from './electorate-map-utils'
+import type { ElectorateFeature, Party, PartyAssignments, PartySeats, Seats } from './electorate-map-types'
 import './ElectorateMap.scss'
 import { allParties, parties } from './electorate-map-constants'
 
@@ -25,22 +25,41 @@ type ElectorateStats = {
 enum Mode {
   GENERAL,
   MAORI,
+  PARTY,
 }
 
 /*
 TODO:
     colourblind mode?
     ability select other party - custom name and colour
-    party vote calculator
 */
 
-const STORAGE_KEY = 'nz-electorate-ratings-2025'
+// TODO fix image export - works unless manually changin party vote???
+// TODO test on Chrome and phone
+
+const STORAGE_KEY = 'nz-electorate-ratings-2026'
 
 export const ElectorateMap: React.FC<Props> = ({ isMobile }) => {
   const [generalTopology, setGeneralTopology] = useState<Nullable<Topology>>(null)
   const [maoriTopology, setMaoriTopology] = useState<Nullable<Topology>>(null)
   const [selectedParty, setSelectedParty] = useState<Party>(parties.nat)
   const [partyAssignments, setPartyAssignments] = useState<PartyAssignments>({})
+  const [partySeats, setPartySeats] = useState<PartySeats>(() => {
+    const initialSeats = {} as PartySeats
+    Object.keys(parties).forEach((partyId) => {
+      if (partyId !== 'unk') {
+        initialSeats[partyId] = { partyVotePercentage: 0, electorateSeats: 0, listSeats: 0, totalSeats: 0, overhang: 0 }
+      }
+    })
+    return initialSeats
+  })
+  const [workingPartyVotePercentage, setWorkingPartyVotePercentage] = useState<Record<string, number>>(() => {
+    return Object.fromEntries(
+      Object.entries(partySeats).map(([partyId, value]) => {
+        return [partyId, value.partyVotePercentage]
+      }),
+    )
+  })
   const [results2020, setResults2020] = useState<PartyAssignments>({})
   const [results2023, setResults2023] = useState<PartyAssignments>({})
   const [electorateStats, setElectorateStats] = useState<ElectorateStats>({})
@@ -49,9 +68,11 @@ export const ElectorateMap: React.FC<Props> = ({ isMobile }) => {
   const [showHint, setShowHint] = useState<boolean>(false)
   const [hideMap, setHideMap] = useState<boolean>(false)
   const [mobileAcknowledged, setMobileAcknowledged] = useState<boolean>(false)
+  const [showPartiesWithNoSeats, setShowPartiesWithNoSeats] = useState<boolean>(true)
   const svgRef = useRef<Nullable<SVGSVGElement>>(null)
   const gRef = useRef<Nullable<SVGGElement>>(null)
   const zoomRef = useRef<Nullable<d3.ZoomBehavior<SVGSVGElement, unknown>>>(null)
+  const afterUpdateRef = useRef<Nullable<() => void>>(null)
 
   const width = 525
   const height = 700
@@ -66,8 +87,40 @@ export const ElectorateMap: React.FC<Props> = ({ isMobile }) => {
   }, [])
 
   useEffect(() => {
+    afterUpdateRef.current = () => {
+      recalculateAndUpdate()
+    }
+
+    const electorateSeatsByParty = getCountByValue(partyAssignments)
+    setPartySeats((prev) =>
+      Object.fromEntries(
+        Object.entries(prev).map(([partyId, prevSeats]) => [
+          partyId,
+          {
+            ...prevSeats,
+            electorateSeats: electorateSeatsByParty[partyId] ?? 0,
+          },
+        ]),
+      ),
+    )
+
     localStorage.setItem(STORAGE_KEY, JSON.stringify(partyAssignments))
   }, [partyAssignments])
+
+  useEffect(() => {
+    setWorkingPartyVotePercentage(
+      Object.fromEntries(
+        Object.entries(partySeats).map(([partyId, value]) => {
+          return [partyId, value.partyVotePercentage]
+        }),
+      ),
+    )
+
+    if (afterUpdateRef.current) {
+      afterUpdateRef.current()
+      afterUpdateRef.current = null
+    }
+  }, [partySeats])
 
   // Load JSON data
   useEffect(() => {
@@ -98,13 +151,13 @@ export const ElectorateMap: React.FC<Props> = ({ isMobile }) => {
       Object.entries(electorateStats).reduce((acc, [id, stats]) => {
         acc[id] = Object.keys(stats['2023'][0])[0]
         return acc
-      }, {} as PartyAssignments)
+      }, {} as PartyAssignments),
     )
     setResults2020(
       Object.entries(electorateStats).reduce((acc, [id, stats]) => {
         acc[id] = Object.keys(stats['2020'][0])[0]
         return acc
-      }, {} as PartyAssignments)
+      }, {} as PartyAssignments),
     )
   }, [electorateStats])
 
@@ -254,7 +307,7 @@ export const ElectorateMap: React.FC<Props> = ({ isMobile }) => {
 
   const nonPartyEffects = useMemo(
     () => (electorateStats?.[slugifiedTooltip]?.effects ?? ['Negligible']).filter((effect) => !effect.match(/National|Labour|Green|ACT|NZ First/)),
-    [electorateStats, slugifiedTooltip]
+    [electorateStats, slugifiedTooltip],
   )
   const partyEffects = useMemo(() => (electorateStats?.[slugifiedTooltip]?.effects ?? []).filter((effect) => effect.match(/National|Labour|Green|ACT|NZ First/)), [electorateStats, slugifiedTooltip])
 
@@ -263,13 +316,127 @@ export const ElectorateMap: React.FC<Props> = ({ isMobile }) => {
       key={'export-map'}
       onClick={async () => {
         setHideMap(true)
-        await exportSvg(gRef, svgRef, path, generalPaths, maoriPaths, generalFeatures, maoriFeatures, partyAssignments, parties, isMobile)
+        await exportSvg(gRef, svgRef, path, generalPaths, maoriPaths, generalFeatures, maoriFeatures, partyAssignments, partySeats, parties, isMobile)
         setHideMap(false)
       }}
     >
       Export Map
     </button>
   )
+
+  const recalculateAndUpdate = () => {
+    setPartySeats((prev) => {
+      return recalculate(prev)
+    })
+  }
+
+  const recalculate = (currentSeats: PartySeats) => {
+    const seatsWithQuotient = [] as [string, number][]
+
+    Object.entries(currentSeats).forEach(([party, { electorateSeats }]) => {
+      if (!electorateSeats && workingPartyVotePercentage[party] < 5.0) {
+        return
+      }
+
+      let divisor = 1
+      while (divisor < 240) {
+        seatsWithQuotient.push([party, workingPartyVotePercentage[party] / divisor])
+        divisor += 2
+      }
+    })
+    seatsWithQuotient.sort((val1, val2) => (val1[1] > val2[1] ? -1 : 1))
+
+    const seats = Object.fromEntries(Object.keys(parties).map((partyId) => [partyId, 0]))
+    for (let i = 0; i < 120; i++) {
+      const nextSeat = seatsWithQuotient[i]
+      if (nextSeat) {
+        seats[nextSeat[0]] = seats[nextSeat[0]] + 1
+      }
+    }
+
+    return Object.fromEntries(
+      Object.entries(currentSeats).map(([partyId, prevSeats]) => [
+        partyId,
+        {
+          electorateSeats: prevSeats.electorateSeats,
+          totalSeats: Math.max(prevSeats.electorateSeats, seats[partyId]),
+          listSeats: Math.max(0, seats[partyId] - prevSeats.electorateSeats),
+          overhang: Math.max(0, prevSeats.electorateSeats - seats[partyId]),
+          partyVotePercentage: workingPartyVotePercentage[partyId],
+        },
+      ]),
+    )
+  }
+
+  const totals = useMemo(() => {
+    const allSeats: Seats = {
+      partyVotePercentage: 0,
+      electorateSeats: 0,
+      listSeats: 0,
+      totalSeats: 0,
+      overhang: 0,
+    }
+
+    allSeats.partyVotePercentage = Object.values(workingPartyVotePercentage).reduce((acc, value) => (acc += value), 0)
+
+    Object.values(partySeats).forEach((value) => {
+      allSeats.electorateSeats += value.electorateSeats
+      allSeats.listSeats += value.listSeats
+      allSeats.totalSeats += value.totalSeats
+      allSeats.overhang += value.overhang
+    })
+
+    return allSeats
+  }, [partySeats, workingPartyVotePercentage])
+
+  const blocs = useMemo(() => {
+    const allBlocs = [
+      // National-led
+      ['nat'],
+      ['nat', 'act'],
+      ['nat', 'nzf'],
+      ['nat', 'top'],
+      ['nat', 'act', 'nzf'],
+      ['nat', 'act', 'top'],
+      ['nat', 'nzf', 'top'],
+      ['nat', 'act', 'nzf', 'top'],
+      // Labour-led
+      ['lab'],
+      ['lab', 'gre'],
+      ['lab', 'nzf'],
+      ['lab', 'top'],
+      ['lab', 'gre', 'nzf'],
+      ['lab', 'gre', 'top'],
+      ['lab', 'tpm'],
+      ['lab', 'tpm', 'top'],
+      ['lab', 'gre', 'tpm'],
+      ['lab', 'gre', 'tpm', 'top'],
+    ]
+
+    return allBlocs
+      .map((parties) => {
+        // one of the parties is not in parliament
+        if (parties.some((partyId) => partySeats[partyId].totalSeats === 0)) {
+          return {
+            parties: parties,
+            numSeats: 0,
+            seatPercent: 0,
+          }
+        }
+
+        const numSeats = parties.reduce((sum, partyId) => (sum += partySeats[partyId].totalSeats), 0)
+        const seatPercent = (numSeats / totals.totalSeats) * 100
+
+        return {
+          parties: parties,
+          numSeats: numSeats,
+          seatPercent: seatPercent,
+        }
+      })
+      .filter(({ seatPercent }) => seatPercent > 50)
+  }, [partySeats, totals])
+
+  console.log(workingPartyVotePercentage)
 
   return (
     <div className={`main-container ${isMobile ? 'mobile' : 'desktop'}`}>
@@ -360,45 +527,152 @@ export const ElectorateMap: React.FC<Props> = ({ isMobile }) => {
           </>
         )}
       </div>
-      <div className={`${hideMap ? 'hidden' : ''}`}>
-        <svg
-          ref={svgRef}
-          className='main-svg'
-          width={isMobile ? '100%' : width}
-          height={isMobile ? '100%' : height}
-          viewBox={`0 0 ${width} ${height}`}
-          role='img'
-          aria-label='Interactive NZ electorates map, click an electorate to change rating'
-        >
-          <g ref={gRef}>
-            {(mode === Mode.GENERAL ? generalPaths : maoriPaths).map(({ id, d, name }) => (
-              <path
-                key={id}
-                d={d}
-                data-id={id}
-                fill={getFill(partyAssignments, parties, id)}
-                stroke='#333'
-                className={`electorate ${partyAssignments[id] || 'unk'}`}
-                tabIndex={-1}
-                aria-label={`${name} - ${partyAssignments[id] ?? 'unk'}`}
-                onClick={() => {
-                  setTooltip(name)
-                  handleClick(id)
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
+      <div>
+        {mode === Mode.PARTY && (
+          <div className='seat-calculator-container'>
+            <table>
+              <thead>
+                <tr>
+                  <th colSpan={3}></th>
+                  <th colSpan={4}>Seats</th>
+                </tr>
+                <tr>
+                  <th colSpan={2}>Party</th>
+                  <th>Party Vote</th>
+                  <th>Electorate</th>
+                  <th>List</th>
+                  <th>Total</th>
+                  <th className='tooltip'>
+                    OH<span className='tooltip-text'>Overhang</span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {Object.entries(partySeats)
+                  .sort(([partyId1, val1], [partyId2, val2]) => {
+                    if (val1.totalSeats > val2.totalSeats) {
+                      return -1
+                    } else if (val1.totalSeats < val2.totalSeats) {
+                      return 1
+                    }
+                    if (val1.partyVotePercentage === 0 && val2.partyVotePercentage === 0) {
+                      // order alphabetically
+                      return partyId1 < partyId2 ? -1 : 1
+                    }
+                    return val1.partyVotePercentage > val2.partyVotePercentage ? -1 : 1
+                  })
+                  .map(([partyId, value]) => (
+                    <tr key={`seats-${partyId}`} className={!showPartiesWithNoSeats && value.totalSeats === 0 ? 'hidden' : ''}>
+                      <td className={`party-box ${partyId}`}></td>
+                      <td className='party-name'>{allParties[partyId]?.name ?? parties.unk.name}</td>
+                      <td className='party-vote'>
+                        <input
+                          type='number'
+                          value={workingPartyVotePercentage[partyId]}
+                          onChange={(e) => {
+                            setWorkingPartyVotePercentage((prev) => ({
+                              ...prev,
+                              [partyId]: +e.target.value,
+                            }))
+                          }}
+                        />{' '}
+                        %
+                      </td>
+                      <td className='num-seats'>{value.electorateSeats}</td>
+                      <td className='num-seats'>{value.listSeats}</td>
+                      <td className='num-seats'>{value.totalSeats}</td>
+                      <td className='overhang'>{value.overhang || ''}</td>
+                    </tr>
+                  ))}
+                <tr>
+                  <td colSpan={2}></td>
+                  <td className='total-seats'>{totals.partyVotePercentage.toFixed(2) + '%'}</td>
+                  <td className='total-seats'>{totals.electorateSeats}</td>
+                  <td className='total-seats'>{totals.listSeats}</td>
+                  <td className='total-seats'>{totals.totalSeats}</td>
+                  <td className='total-seats'>{totals.overhang || ''}</td>
+                </tr>
+              </tbody>
+            </table>
+            <div className='button-container'>
+              <button onClick={() => recalculateAndUpdate()}>Recalculate</button>
+              <label className='checkbox-container'>
+                Show parties with zero seats
+                <input className='hidden' type='checkbox' checked={showPartiesWithNoSeats} onChange={() => setShowPartiesWithNoSeats(!showPartiesWithNoSeats)} />
+                <span />
+              </label>
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th colSpan={3}>Possible Blocs To Form Majority</th>
+                </tr>
+                <tr>
+                  <th>Parties</th>
+                  <th>Total Seats</th>
+                  <th>Percentage of Seats</th>
+                </tr>
+              </thead>
+              <tbody>
+                {blocs.map((bloc) => (
+                  <tr key={`bloc-${bloc.parties.join('-')}`}>
+                    <td>
+                      {bloc.parties.map((party) => (
+                        <span key={`bloc-${bloc.parties.join('-')}-${party}`} className={`party-box ${party}`} />
+                      ))}
+                    </td>
+                    <td>{bloc.numSeats}</td>
+                    <td>{bloc.seatPercent.toFixed(2)}%</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <div className='table-message'>
+              Please note previous election results may show incorrect seat counts due to the combination of the Mana and Ōhāriu electorates into the Kenepuru electorate following the 2025 Boundary
+              Review.
+            </div>
+          </div>
+        )}
+        <div className={`${hideMap || mode === Mode.PARTY ? 'hidden-map' : ''}`}>
+          <svg
+            ref={svgRef}
+            className='main-svg'
+            width={isMobile ? '100%' : width}
+            height={isMobile ? '100%' : height}
+            viewBox={`0 0 ${width} ${height}`}
+            role='img'
+            aria-label='Interactive NZ electorates map, click an electorate to change rating'
+          >
+            <g ref={gRef}>
+              {(mode === Mode.GENERAL ? generalPaths : maoriPaths).map(({ id, d, name }) => (
+                <path
+                  key={id}
+                  d={d}
+                  data-id={id}
+                  fill={getFill(partyAssignments, parties, id)}
+                  stroke='#333'
+                  className={`electorate ${partyAssignments[id] || 'unk'}`}
+                  tabIndex={-1}
+                  aria-label={`${name} - ${partyAssignments[id] ?? 'unk'}`}
+                  onClick={() => {
                     setTooltip(name)
                     handleClick(id)
-                  }
-                }}
-                onMouseEnter={() => {
-                  setTooltip(name)
-                }}
-              />
-            ))}
-          </g>
-        </svg>
-        {showHint && <div className='hint'>Use two fingers to move the map</div>}
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      setTooltip(name)
+                      handleClick(id)
+                    }
+                  }}
+                  onMouseEnter={() => {
+                    setTooltip(name)
+                  }}
+                />
+              ))}
+            </g>
+          </svg>
+          {showHint && <div className='hint'>Use two fingers to move the map</div>}
+        </div>
       </div>
       <Options
         isMobile={isMobile}
@@ -408,10 +682,12 @@ export const ElectorateMap: React.FC<Props> = ({ isMobile }) => {
         setMode={setMode}
         partyAssignments={partyAssignments}
         setPartyAssignments={setPartyAssignments}
+        setPartySeats={setPartySeats}
         selectedParty={selectedParty}
         setSelectedParty={setSelectedParty}
         resetZoom={resetZoom}
         additionalButtons={[exportMapButton]}
+        afterUpdateRef={afterUpdateRef}
       />
     </div>
   )
@@ -423,17 +699,42 @@ type OptionsProps = {
   setMode: React.Dispatch<React.SetStateAction<Mode>>
   partyAssignments: PartyAssignments
   setPartyAssignments: React.Dispatch<React.SetStateAction<PartyAssignments>>
+  setPartySeats: React.Dispatch<React.SetStateAction<PartySeats>>
   results2023: PartyAssignments
   results2020: PartyAssignments
   selectedParty: Party
   setSelectedParty: React.Dispatch<React.SetStateAction<Party>>
   resetZoom: (instantly: boolean) => void
   additionalButtons: JSX.Element[]
+  afterUpdateRef: RefObject<Nullable<() => void>>
 }
 
 const Options: React.FC<OptionsProps> = (props) => {
   const [showLoadModal, setShowLoadModal] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const results = useMemo(() => {
+    return {
+      '2020': {
+        lab: [50.01, 20, 65, 0], // should be 19 but electorate no longer exists
+        nat: [25.58, 10, 33, 0],
+        gre: [7.86, 9, 10, 0],
+        act: [7.59, 9, 10, 0],
+        tpm: [1.17, 1, 2, 0],
+        nzf: [2.6, 0, 0, 0],
+        top: [1.51, 0, 0, 0],
+      },
+      '2023': {
+        nat: [38.08, 5, 49, 1],
+        lab: [26.91, 18, 34, 0], // should be 17 but electorate no longer exists
+        gre: [11.6, 12, 15, 0],
+        act: [8.64, 9, 11, 0],
+        nzf: [6.08, 8, 8, 0],
+        tpm: [3.08, 0, 6, 2],
+        top: [2.22, 0, 0, 0],
+      },
+    }
+  }, []) as { [year in '2020' | '2023']: { [partyId: string]: number[] } }
 
   const exportJson = () => {
     const blob = new Blob([JSON.stringify(props.partyAssignments, null, 2)], {
@@ -442,7 +743,7 @@ const Options: React.FC<OptionsProps> = (props) => {
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = 'nz-electorate-ratings-2025.json'
+    a.download = 'nz-electorate-ratings-2026.json'
     a.click()
     URL.revokeObjectURL(url)
   }
@@ -458,8 +759,52 @@ const Options: React.FC<OptionsProps> = (props) => {
     }
   }
 
-  const onLoad = (assignments: PartyAssignments) => {
-    props.setPartyAssignments(assignments)
+  const onLoad = (assignments: PartyAssignments, year: '2020' | '2023' | 'none') => {
+    // set assignments after seats are set to avoid conflicts
+    props.afterUpdateRef.current = () => {
+      props.setPartyAssignments(assignments)
+    }
+
+    const electorateCountByParty = getCountByValue(assignments)
+    const updatedSeats = {} as PartySeats
+    switch (year) {
+      case '2020':
+        props.setPartySeats((prev) => {
+          Object.keys(prev).forEach((party) => {
+            updatedSeats[party] = {
+              partyVotePercentage: results[2020][party][0],
+              listSeats: results[2020][party][1],
+              electorateSeats: electorateCountByParty[party] ?? 0,
+              totalSeats: results[2020][party][2],
+              overhang: results[2020][party][3],
+            }
+          })
+          return updatedSeats
+        })
+        break
+      case '2023':
+        props.setPartySeats((prev) => {
+          Object.keys(prev).forEach((party) => {
+            updatedSeats[party] = {
+              partyVotePercentage: results[2023][party][0],
+              listSeats: results[2023][party][1],
+              electorateSeats: electorateCountByParty[party] ?? 0,
+              totalSeats: results[2023][party][2],
+              overhang: results[2023][party][3],
+            }
+          })
+          return updatedSeats
+        })
+        break
+      case 'none':
+        props.setPartySeats((prev) => {
+          Object.keys(prev).forEach((party) => {
+            updatedSeats[party] = { partyVotePercentage: 0, electorateSeats: 0, listSeats: 0, totalSeats: 0, overhang: 0 }
+          })
+          return updatedSeats
+        })
+        break
+    }
     setShowLoadModal(false)
   }
 
@@ -467,9 +812,9 @@ const Options: React.FC<OptionsProps> = (props) => {
     <Modal onClose={() => setShowLoadModal(false)} className='load-ratings-modal'>
       <h3 className='modal-header'>Load Ratings </h3>
       <div className={`modal-body ${props.isMobile ? 'mobile' : ''}`}>
-        <button onClick={() => onLoad(props.results2023)}>Load 2023 Results</button>
-        <button onClick={() => onLoad(props.results2020)}>Load 2020 Results</button>
-        <button onClick={() => onLoad({})}>Load Blank Map</button>
+        <button onClick={() => onLoad(props.results2023, '2023')}>Load 2023 Results</button>
+        <button onClick={() => onLoad(props.results2020, '2020')}>Load 2020 Results</button>
+        <button onClick={() => onLoad({}, 'none')}>Load Blank Map</button>
         {!props.isMobile && (
           <>
             <button
@@ -502,10 +847,11 @@ const Options: React.FC<OptionsProps> = (props) => {
       <>
         <div className='mobile-options-container'>
           <div className='select-container'>
-            <label>Electorate Type:</label>
+            <label>Seat Type:</label>
             <select value={props.mode} onChange={(e) => props.setMode(+e.target.value)}>
               <option value={Mode.GENERAL}>General</option>
               <option value={Mode.MAORI}>Māori</option>
+              <option value={Mode.PARTY}>Party</option>
             </select>
           </div>
           <div className='select-container'>
@@ -551,12 +897,12 @@ const Options: React.FC<OptionsProps> = (props) => {
         </div>
         <hr />
         <div className='container'>
-          <strong>Electorate Type</strong>
+          <strong>Seat Type</strong>
           <label className={`selector ${props.mode === Mode.GENERAL ? 'selected' : ''}`}>
             <input
               className='hidden'
               type='radio'
-              name='electorate'
+              name='general'
               value={Mode.GENERAL}
               checked={props.mode === Mode.GENERAL}
               onChange={() => {
@@ -571,7 +917,7 @@ const Options: React.FC<OptionsProps> = (props) => {
             <input
               className='hidden'
               type='radio'
-              name='electorate'
+              name='maori'
               value={Mode.MAORI}
               checked={props.mode === Mode.MAORI}
               onChange={() => {
@@ -581,6 +927,21 @@ const Options: React.FC<OptionsProps> = (props) => {
             />
             <span className='party-box' />
             Māori
+          </label>
+          <label className={`selector ${props.mode === Mode.PARTY ? 'selected' : ''}`}>
+            <input
+              className='hidden'
+              type='radio'
+              name='party'
+              value={Mode.PARTY}
+              checked={props.mode === Mode.PARTY}
+              onChange={() => {
+                props.resetZoom(false)
+                props.setMode(Mode.PARTY)
+              }}
+            />
+            <span className='party-box' />
+            Party
           </label>
           <div className='message'>Use the 'Export Map' button to combine both electorate types into a single image and download it.</div>
         </div>
