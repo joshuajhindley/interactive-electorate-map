@@ -34,9 +34,6 @@ TODO:
     ability select other party - custom name and colour
 */
 
-// TODO fix image export - works unless manually changin party vote???
-// TODO test on Chrome and phone
-
 const STORAGE_KEY = 'nz-electorate-ratings-2026'
 
 export const ElectorateMap: React.FC<Props> = ({ isMobile }) => {
@@ -52,13 +49,6 @@ export const ElectorateMap: React.FC<Props> = ({ isMobile }) => {
       }
     })
     return initialSeats
-  })
-  const [workingPartyVotePercentage, setWorkingPartyVotePercentage] = useState<Record<string, number>>(() => {
-    return Object.fromEntries(
-      Object.entries(partySeats).map(([partyId, value]) => {
-        return [partyId, value.partyVotePercentage]
-      }),
-    )
   })
   const [results2020, setResults2020] = useState<PartyAssignments>({})
   const [results2023, setResults2023] = useState<PartyAssignments>({})
@@ -108,14 +98,6 @@ export const ElectorateMap: React.FC<Props> = ({ isMobile }) => {
   }, [partyAssignments])
 
   useEffect(() => {
-    setWorkingPartyVotePercentage(
-      Object.fromEntries(
-        Object.entries(partySeats).map(([partyId, value]) => {
-          return [partyId, value.partyVotePercentage]
-        }),
-      ),
-    )
-
     if (afterUpdateRef.current) {
       afterUpdateRef.current()
       afterUpdateRef.current = null
@@ -333,14 +315,14 @@ export const ElectorateMap: React.FC<Props> = ({ isMobile }) => {
   const recalculate = (currentSeats: PartySeats) => {
     const seatsWithQuotient = [] as [string, number][]
 
-    Object.entries(currentSeats).forEach(([party, { electorateSeats }]) => {
-      if (!electorateSeats && workingPartyVotePercentage[party] < 5.0) {
+    Object.entries(currentSeats).forEach(([party, { electorateSeats, partyVotePercentage }]) => {
+      if (partyVotePercentage === 0 || (!electorateSeats && partyVotePercentage < 5.0)) {
         return
       }
 
       let divisor = 1
       while (divisor < 240) {
-        seatsWithQuotient.push([party, workingPartyVotePercentage[party] / divisor])
+        seatsWithQuotient.push([party, partyVotePercentage / divisor])
         divisor += 2
       }
     })
@@ -358,11 +340,11 @@ export const ElectorateMap: React.FC<Props> = ({ isMobile }) => {
       Object.entries(currentSeats).map(([partyId, prevSeats]) => [
         partyId,
         {
+          ...prevSeats,
           electorateSeats: prevSeats.electorateSeats,
           totalSeats: Math.max(prevSeats.electorateSeats, seats[partyId]),
           listSeats: Math.max(0, seats[partyId] - prevSeats.electorateSeats),
           overhang: Math.max(0, prevSeats.electorateSeats - seats[partyId]),
-          partyVotePercentage: workingPartyVotePercentage[partyId],
         },
       ]),
     )
@@ -377,17 +359,16 @@ export const ElectorateMap: React.FC<Props> = ({ isMobile }) => {
       overhang: 0,
     }
 
-    allSeats.partyVotePercentage = Object.values(workingPartyVotePercentage).reduce((acc, value) => (acc += value), 0)
-
     Object.values(partySeats).forEach((value) => {
       allSeats.electorateSeats += value.electorateSeats
       allSeats.listSeats += value.listSeats
       allSeats.totalSeats += value.totalSeats
       allSeats.overhang += value.overhang
+      allSeats.partyVotePercentage += value.partyVotePercentage
     })
 
     return allSeats
-  }, [partySeats, workingPartyVotePercentage])
+  }, [partySeats])
 
   const blocs = useMemo(() => {
     const allBlocs = [
@@ -566,11 +547,15 @@ export const ElectorateMap: React.FC<Props> = ({ isMobile }) => {
                       <td className='party-vote'>
                         <input
                           type='number'
-                          value={workingPartyVotePercentage[partyId]}
+                          value={value.partyVotePercentage}
                           onChange={(e) => {
-                            setWorkingPartyVotePercentage((prev) => ({
+                            afterUpdateRef.current = recalculateAndUpdate
+                            setPartySeats((prev) => ({
                               ...prev,
-                              [partyId]: +e.target.value,
+                              [partyId]: {
+                                ...prev[partyId],
+                                partyVotePercentage: +e.target.value,
+                              },
                             }))
                           }}
                         />{' '}
@@ -592,14 +577,11 @@ export const ElectorateMap: React.FC<Props> = ({ isMobile }) => {
                 </tr>
               </tbody>
             </table>
-            <div className='button-container'>
-              <button onClick={() => recalculateAndUpdate()}>Recalculate</button>
-              <label className='checkbox-container'>
-                Show parties with zero seats
-                <input className='hidden' type='checkbox' checked={showPartiesWithNoSeats} onChange={() => setShowPartiesWithNoSeats(!showPartiesWithNoSeats)} />
-                <span />
-              </label>
-            </div>
+            <label className='checkbox-container'>
+              Show parties with zero seats
+              <input className='hidden' type='checkbox' checked={showPartiesWithNoSeats} onChange={() => setShowPartiesWithNoSeats(!showPartiesWithNoSeats)} />
+              <span />
+            </label>
             <table>
               <thead>
                 <tr>
@@ -612,17 +594,23 @@ export const ElectorateMap: React.FC<Props> = ({ isMobile }) => {
                 </tr>
               </thead>
               <tbody>
-                {blocs.map((bloc) => (
-                  <tr key={`bloc-${bloc.parties.join('-')}`}>
-                    <td>
-                      {bloc.parties.map((party) => (
-                        <span key={`bloc-${bloc.parties.join('-')}-${party}`} className={`party-box ${party}`} />
-                      ))}
-                    </td>
-                    <td>{bloc.numSeats}</td>
-                    <td>{bloc.seatPercent.toFixed(2)}%</td>
+                {blocs.length > 0 ? (
+                  blocs.map((bloc) => (
+                    <tr key={`bloc-${bloc.parties.join('-')}`}>
+                      <td>
+                        {bloc.parties.map((party) => (
+                          <span key={`bloc-${bloc.parties.join('-')}-${party}`} className={`party-box ${party}`} />
+                        ))}
+                      </td>
+                      <td>{bloc.numSeats}</td>
+                      <td>{bloc.seatPercent.toFixed(2)}%</td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={3}>No bloc is able to form a majority</td>
                   </tr>
-                ))}
+                )}
               </tbody>
             </table>
             <div className='table-message'>
@@ -758,7 +746,7 @@ const Options: React.FC<OptionsProps> = (props) => {
   }
 
   const onLoad = (assignments: PartyAssignments, year: '2020' | '2023' | 'none') => {
-    // set assignments after seats are set to avoid conflicts
+    // set assignments after electorate seats are set to avoid conflicts
     props.afterUpdateRef.current = () => {
       props.setPartyAssignments(assignments)
     }

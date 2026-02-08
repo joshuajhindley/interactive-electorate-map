@@ -109,10 +109,6 @@
     .num-seats {
       width: 40px;
     }
-
-    .button-container button {
-      margin-right: 12px;
-    }
   }
 
   .checkbox-container {
@@ -310,8 +306,10 @@
 .checkbox-container {
   display: block;
   position: relative;
-  padding: 0 28px 0 30px;
-  margin-top: 20px;
+  padding-left: 28px;
+  margin: 10px 0 6px;
+  width: 200px;
+  align-self: center;
   height: fit-content;
   cursor: pointer;
   user-select: none;
