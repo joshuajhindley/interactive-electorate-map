@@ -21,6 +21,10 @@
     max-height: 80%;
     box-shadow: 0 4px 12px rgba(0,0,0,0.3);
 
+    .modal-header {
+      margin: -16px 0 16px 0;
+    }
+
     .close-button {
       position: absolute;
       top: 12px;

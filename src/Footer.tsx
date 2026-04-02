@@ -8,7 +8,7 @@ export const Footer: React.FC<{}> = () => {
   return (
     <>
       <footer>
-        Interactive NZ Electorate Map v1.1.1
+        Interactive NZ Electorate Map v1.2.0
         <br />
         Created by Joshua Hindley -{' '}
         <a target='_blank' href='https://twitter.com/jhindleynz'>

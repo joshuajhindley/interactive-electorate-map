@@ -4,9 +4,11 @@ import './Modal.scss'
 type ModalProps = PropsWithChildren & {
   onClose: () => void
   className?: string
+  header?: string
+  maxWidth?: string
 }
 
-const Modal: React.FC<ModalProps> = ({ children, onClose, className }) => {
+const Modal: React.FC<ModalProps> = ({ children, onClose, className, header, maxWidth }) => {
   useEffect(() => {
     // prevent background elements scrolling while modal is open
     document.body.style.overflow = 'hidden'
@@ -22,7 +24,9 @@ const Modal: React.FC<ModalProps> = ({ children, onClose, className }) => {
       <div
         className={`modal-content ${className}`}
         onClick={(e) => e.stopPropagation()} // prevent closing when clicking inside
+        style={{ maxWidth: maxWidth }}
       >
+        {header && <h2 className='modal-header'>{header}</h2>}
         <span className='close-button' onClick={onClose} aria-label='Close modal'>
           x
         </span>

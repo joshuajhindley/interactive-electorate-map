@@ -3,7 +3,7 @@ import type { Parties, TransformGroup } from './electorate-map-types'
 /**
  * Currently existing parties
  */
-export const parties: Parties = {
+export const realParties: Parties = {
   nat: { id: 'nat', name: 'National', color: '#00529f' },
   lab: { id: 'lab', name: 'Labour', color: '#d82a20' },
   gre: { id: 'gre', name: 'Green', color: '#098137' },
@@ -11,7 +11,32 @@ export const parties: Parties = {
   nzf: { id: 'nzf', name: 'NZ First', color: '#000000' },
   tpm: { id: 'tpm', name: 'Te Pāti Māori', color: '#b2001a' },
   top: { id: 'top', name: 'Opportunity', color: '#09B598' },
+}
+
+/**
+ * Currently existing parties and unknown
+ */
+export const parties: Parties = {
+  ...realParties,
   unk: { id: 'unk', name: 'None', color: '#ccc' },
+}
+
+/**
+ * Default map of parties willing to form Government with one another
+ */
+export const defaultPartyCompatibilities = {
+  'act-nat': true,
+  'act-nzf': true,
+  'act-top': true,
+  'gre-lab': true,
+  'gre-top': true,
+  'gre-tpm': true,
+  'lab-top': true,
+  'lab-tpm': true,
+  'nat-nzf': true,
+  'nat-top': true,
+  'nzf-top': true,
+  'top-tpm': true,
 }
 
 /**

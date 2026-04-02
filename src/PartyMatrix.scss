@@ -1,0 +1,63 @@
+.party-matrix-table-wrapper {
+  overflow-x: auto;
+
+  table {
+    border: 5px solid white;
+    border-collapse: collapse;
+    width: 100%;
+    table-layout: fixed;
+
+    .party-header {
+      border: 1px solid #ddd;
+      padding: 20px;
+      text-align: center;
+      transition: all 0.1s ease;
+      font-size: 0.85rem;
+    }
+
+    .party-cell {
+      @extend .party-header;
+      cursor: pointer;
+    }
+
+    .checked {
+      background-color: #05411c;
+    }
+
+    input {
+      pointer-events: none;
+    }
+
+    .selector {
+      width: fit-content;
+      margin: auto;
+      align-items: center;
+      cursor: pointer;
+      display: flex;
+      justify-content: center;
+    }
+  }
+}
+
+
+[data-tooltip]:before {
+  font-size: 12px;
+  content: attr(data-tooltip);
+  position: absolute;
+  opacity: 0;
+  z-index: 9999;
+  overflow: visible;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+[data-tooltip]:hover:before {
+  opacity: 1;
+  border-radius: 3px;
+  padding: 3px;
+  background: black;
+  border: 1px solid white;
+  color: white;
+  margin-left: 24px;
+  margin-top: -4px
+}

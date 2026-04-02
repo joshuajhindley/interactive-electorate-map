@@ -26,6 +26,15 @@ export const getCountByValue = (record: Record<string, string>) => {
   return result
 }
 
+/**
+ * @param id1 The first party's id (e.g. nat)
+ * @param id2 The second party's id (e.g. lab)
+ * @returns the pair key of the two parties (e.g. lab-nat)
+ */
+export const getPartyPairKey = (id1: string, id2: string) => {
+  return [id1, id2].sort().join('-')
+}
+
 export const slugify = (s: string) =>
   s
     .toLowerCase()

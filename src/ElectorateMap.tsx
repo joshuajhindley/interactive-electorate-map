@@ -3,10 +3,12 @@ import * as d3 from 'd3'
 import { feature } from 'topojson-client'
 import type { GeometryCollection } from 'topojson-specification'
 import Modal from './Modal'
-import { exportSvg, getCountByValue, getFill, hashString, slugify } from './electorate-map-utils'
+import { exportSvg, getCountByValue, getFill, getPartyPairKey, hashString, slugify } from './electorate-map-utils'
 import type { ElectorateFeature, Party, PartyAssignments, PartySeats, Seats } from './electorate-map-types'
 import './ElectorateMap.scss'
-import { allParties, parties } from './electorate-map-constants'
+import { allParties, defaultPartyCompatibilities, parties, realParties } from './electorate-map-constants'
+import PartyMatrix from './PartyMatrix'
+import FeatureSuggestion from './FeatureSuggestion'
 
 type Topology = any
 
@@ -50,6 +52,7 @@ export const ElectorateMap: React.FC<Props> = ({ isMobile }) => {
     })
     return initialSeats
   })
+  const [partyCompatibility, setPartyCompatibility] = useState<{ [id: string]: boolean }>(defaultPartyCompatibilities)
   const [results2020, setResults2020] = useState<PartyAssignments>({})
   const [results2023, setResults2023] = useState<PartyAssignments>({})
   const [electorateStats, setElectorateStats] = useState<ElectorateStats>({})
@@ -59,6 +62,8 @@ export const ElectorateMap: React.FC<Props> = ({ isMobile }) => {
   const [hideMap, setHideMap] = useState<boolean>(false)
   const [mobileAcknowledged, setMobileAcknowledged] = useState<boolean>(false)
   const [showPartiesWithNoSeats, setShowPartiesWithNoSeats] = useState<boolean>(true)
+  const [showBlocConfig, setShowBlocConfig] = useState<boolean>(false)
+  const [showEmailForm, setShowEmailForm] = useState<boolean>(false)
   const svgRef = useRef<Nullable<SVGSVGElement>>(null)
   const gRef = useRef<Nullable<SVGGElement>>(null)
   const zoomRef = useRef<Nullable<d3.ZoomBehavior<SVGSVGElement, unknown>>>(null)
@@ -306,6 +311,12 @@ export const ElectorateMap: React.FC<Props> = ({ isMobile }) => {
     </button>
   )
 
+  const requestFeatureButton = (
+    <button key='request-feature' onClick={() => setShowEmailForm(true)}>
+      Report Bug/Suggest Feature
+    </button>
+  )
+
   const recalculateAndUpdate = () => {
     setPartySeats((prev) => {
       return recalculate(prev)
@@ -370,29 +381,43 @@ export const ElectorateMap: React.FC<Props> = ({ isMobile }) => {
     return allSeats
   }, [partySeats])
 
+  const togglePartyCompatibility = (partyId1: string, partyId2: string) => {
+    const pairKey = getPartyPairKey(partyId1, partyId2)
+
+    setPartyCompatibility((prev) => ({
+      ...prev,
+      [pairKey]: !prev[pairKey],
+    }))
+  }
+
   const blocs = useMemo(() => {
-    const allBlocs = [
-      // National-led
-      ['nat'],
-      ['nat', 'act'],
-      ['nat', 'nzf'],
-      ['nat', 'top'],
-      ['nat', 'act', 'nzf'],
-      ['nat', 'act', 'top'],
-      ['nat', 'nzf', 'top'],
-      ['nat', 'act', 'nzf', 'top'],
-      // Labour-led
-      ['lab'],
-      ['lab', 'gre'],
-      ['lab', 'nzf'],
-      ['lab', 'top'],
-      ['lab', 'gre', 'nzf'],
-      ['lab', 'gre', 'top'],
-      ['lab', 'tpm'],
-      ['lab', 'tpm', 'top'],
-      ['lab', 'gre', 'tpm'],
-      ['lab', 'gre', 'tpm', 'top'],
-    ]
+    const allBlocs: string[][] = []
+
+    const isPairCompatible = (partyId1: string, partyId2: string) => {
+      if (partyId1 === partyId2) return
+      return partyCompatibility[getPartyPairKey(partyId1, partyId2)] === true
+    }
+
+    // Recursive function to find sets where everyone likes everyone
+    const findCliques = (currentBloc: string[], remainingParties: string[]) => {
+      if (currentBloc.length > 0) {
+        allBlocs.push([...currentBloc])
+      }
+
+      for (let i = 0; i < remainingParties.length; i++) {
+        const candidate = remainingParties[i]
+
+        // Check if candidate is compatible with EVERYONE already in the currentBloc
+        const isCompatibleWithAll = currentBloc.every((member) => isPairCompatible(member, candidate))
+
+        if (isCompatibleWithAll) {
+          // Move forward with this candidate included
+          findCliques([...currentBloc, candidate], remainingParties.slice(i + 1))
+        }
+      }
+    }
+
+    findCliques([], Object.keys(realParties))
 
     return allBlocs
       .map((parties) => {
@@ -415,7 +440,7 @@ export const ElectorateMap: React.FC<Props> = ({ isMobile }) => {
         }
       })
       .filter(({ seatPercent }) => seatPercent > 50)
-  }, [partySeats, totals])
+  }, [partySeats, totals, partyCompatibility])
 
   return (
     <div className={`main-container ${isMobile ? 'mobile' : 'desktop'}`}>
@@ -424,15 +449,31 @@ export const ElectorateMap: React.FC<Props> = ({ isMobile }) => {
           <div>Please note that while this page is usable on mobile, it is primarily intended and optimised for use on desktop devices.</div>
         </Modal>
       )}
+      {showBlocConfig && (
+        <Modal header='Bloc Configuration' maxWidth='950px' onClose={() => setShowBlocConfig(false)}>
+          <PartyMatrix partyCompatibility={partyCompatibility} togglePartyCompatibility={togglePartyCompatibility} />
+        </Modal>
+      )}
+      {showEmailForm && (
+        <Modal header='Report a bug or suggest a feature' onClose={() => setShowEmailForm(false)}>
+          <FeatureSuggestion />
+        </Modal>
+      )}
       <div className='electorate-information'>
         <strong>Electorate Information</strong>
         {tooltip ? (
           <>
             <br />
-            <h3>
-              <i>{tooltip}</i>
-            </h3>
+            <div className='electorate-header'>
+              <h3>
+                <i>{tooltip}</i>
+              </h3>
+              <span className='clear-button' onClick={() => setTooltip(null)} aria-label='Clear electorate'>
+                x
+              </span>
+            </div>
             <hr />
+            {/* TODO add tabs for electorate and candidate information */}
             {(['2023', '2020'] as const).map((year) => (
               <React.Fragment key={year}>
                 <br />
@@ -577,11 +618,14 @@ export const ElectorateMap: React.FC<Props> = ({ isMobile }) => {
                 </tr>
               </tbody>
             </table>
-            <label className='checkbox-container'>
-              Show parties with zero seats
-              <input className='hidden' type='checkbox' checked={showPartiesWithNoSeats} onChange={() => setShowPartiesWithNoSeats(!showPartiesWithNoSeats)} />
-              <span />
-            </label>
+            <div className='party-settings'>
+              <label className='checkbox-container'>
+                Show parties with zero seats
+                <input className='hidden' type='checkbox' checked={showPartiesWithNoSeats} onChange={() => setShowPartiesWithNoSeats(!showPartiesWithNoSeats)} />
+                <span />
+              </label>
+              <button onClick={() => setShowBlocConfig(true)}>Configure Blocs</button>
+            </div>
             <table>
               <thead>
                 <tr>
@@ -672,7 +716,7 @@ export const ElectorateMap: React.FC<Props> = ({ isMobile }) => {
         selectedParty={selectedParty}
         setSelectedParty={setSelectedParty}
         resetZoom={resetZoom}
-        additionalButtons={[exportMapButton]}
+        additionalButtons={[exportMapButton, requestFeatureButton]}
         afterUpdateRef={afterUpdateRef}
       />
     </div>

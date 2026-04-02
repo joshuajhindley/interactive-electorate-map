@@ -1,7 +1,7 @@
 {
   "name": "nz-electorate-map",
   "private": true,
-  "version": "1.1.1",
+  "version": "1.2.0",
   "type": "module",
   "license": "MIT",
   "homepage": "https://hindley.me/interactive-electorate-map",
@@ -20,6 +20,7 @@
     "martinez-polygon-clipping": "^0.7.4",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
+    "react-google-recaptcha": "^3.1.0",
     "sass": "^1.93.3",
     "topojson-client": "^3.1.0"
   },
@@ -29,6 +30,7 @@
     "@types/node": "^24.6.0",
     "@types/react": "^19.1.16",
     "@types/react-dom": "^19.1.9",
+    "@types/react-google-recaptcha": "^2.1.9",
     "@types/topojson-client": "^3.1.5",
     "@vitejs/plugin-react": "^5.0.4",
     "eslint": "^9.36.0",
