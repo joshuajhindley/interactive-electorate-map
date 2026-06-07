@@ -2,12 +2,19 @@ import * as d3 from 'd3'
 import * as htmlToImage from 'html-to-image'
 import * as polygonClipping from 'martinez-polygon-clipping'
 import rewind from '@turf/rewind'
-import type { ElectorateFeature, Parties, PartyAssignments, PartySeats, Path } from './electorate-map-types'
+import { SafeLikelyLean, type ElectorateFeature, type Parties, type PartyAssignments, type PartySeats, type Path } from './electorate-map-types'
 import { cityGroups } from './electorate-map-constants'
 
-export const getFill = (partyAssignments: PartyAssignments, parties: Parties, id: string) => {
-  const partyId = partyAssignments[id] || 'unk'
-  return parties[partyId]?.color ?? '#ccc'
+export const getFill = (partyAssignments: PartyAssignments, parties: Parties, id: string, leanLikelyEnabled: boolean) => {
+  const assignment = partyAssignments[id]
+  const partyId = assignment?.party ?? 'unk'
+  const party = parties[partyId]
+  if (!party) return '#ccc'
+  if (!leanLikelyEnabled) return party.color
+
+  if (assignment?.rating === SafeLikelyLean.LEAN) return party.lean ?? party.color
+  if (assignment?.rating === SafeLikelyLean.LIKELY) return party.likely ?? party.color
+  return party.color
 }
 
 const macronMap: Record<string, string> = {
@@ -18,9 +25,43 @@ const macronMap: Record<string, string> = {
   ū: 'u',
 }
 
-export const getCountByValue = (record: Record<string, string>) => {
-  const result = Object.values(record).reduce<Record<string, number>>((acc, value) => {
-    acc[value] = (acc[value] || 0) + 1
+export const getNextRating = (currentRating?: SafeLikelyLean) => {
+  switch (currentRating) {
+    case undefined:
+    case SafeLikelyLean.LEAN:
+      return SafeLikelyLean.SAFE
+    case SafeLikelyLean.SAFE:
+      return SafeLikelyLean.LIKELY
+    case SafeLikelyLean.LIKELY:
+      return SafeLikelyLean.LEAN
+  }
+}
+
+export const getPrevRating = (currentRating?: SafeLikelyLean) => {
+  switch (currentRating) {
+    case undefined:
+    case SafeLikelyLean.SAFE:
+      return SafeLikelyLean.LEAN
+    case SafeLikelyLean.LIKELY:
+      return SafeLikelyLean.SAFE
+    case SafeLikelyLean.LEAN:
+      return SafeLikelyLean.LIKELY
+  }
+}
+
+export const getCountByValue = (record: PartyAssignments) => {
+  const result = Object.values(record).reduce<Record<string, { total: number; safe: number; likely: number; lean: number }>>((acc, value) => {
+    acc[value.party] = acc[value.party] || { total: 0, safe: 0, likely: 0, lean: 0 }
+
+    // undefined or safe
+    if (!value.rating) {
+      acc[value.party].safe++
+    } else if (value.rating === SafeLikelyLean.LIKELY) {
+      acc[value.party].likely++
+    } else {
+      acc[value.party].lean++
+    }
+    acc[value.party].total++
     return acc
   }, {})
   return result
@@ -64,6 +105,7 @@ export const exportSvg = async (
   partySeats: PartySeats,
   parties: Parties,
   isMobile: boolean,
+  leanLikelyEnabled: boolean,
 ) => {
   const g = d3.select(gRef.current)
 
@@ -106,7 +148,7 @@ export const exportSvg = async (
     g.append('path')
       .attr('d', d)
       .attr('data-id', id)
-      .attr('fill', getFill(partyAssignments, parties, id))
+      .attr('fill', getFill(partyAssignments, parties, id, leanLikelyEnabled))
       .attr('stroke', 'black')
       .attr('stroke-width', 0.4)
       .attr('vector-effect', 'non-scaling-stroke')
@@ -120,7 +162,7 @@ export const exportSvg = async (
       .append('path')
       .attr('d', d)
       .attr('data-id', id)
-      .attr('fill', getFill(partyAssignments, parties, id))
+      .attr('fill', getFill(partyAssignments, parties, id, leanLikelyEnabled))
       .attr('stroke', 'black')
       .attr('stroke-width', 0.5)
       .attr('vector-effect', 'non-scaling-stroke')
@@ -128,47 +170,176 @@ export const exportSvg = async (
 
   if (Object.values(partySeats).some((value) => value.totalSeats > 0)) {
     const partiesWithSeats = Object.entries(partySeats).filter(([_, { totalSeats }]) => totalSeats > 0)
-    const legend = g.append('g').attr('transform', `translate(${w * 2 - 260}, ${h - (Object.keys(partiesWithSeats).length - 1) * 20 - 80})`)
+    const legend = g.append('g').attr('transform', `translate(${w * 2 - 280}, ${h - (Object.keys(partiesWithSeats).length - 1) * 20 - 50})`)
     added.push(legend)
 
-    legend.append('text').attr('x', 35).attr('y', 0).text('Party').attr('font-size', 14).attr('font-family', 'sans-serif').attr('fill', 'black').attr('font-weight', 'bold')
-    legend.append('text').attr('x', 85).attr('y', -8).text('Electorate').attr('font-size', 14).attr('font-family', 'sans-serif').attr('fill', 'black').attr('font-weight', 'bold')
-    legend.append('text').attr('x', 100).attr('y', 8).text('Seats').attr('font-size', 14).attr('font-family', 'sans-serif').attr('fill', 'black').attr('font-weight', 'bold')
-    legend.append('text').attr('x', 166).attr('y', -8).text('List').attr('font-size', 14).attr('font-family', 'sans-serif').attr('fill', 'black').attr('font-weight', 'bold')
-    legend.append('text').attr('x', 160).attr('y', 8).text('Seats').attr('font-size', 14).attr('font-family', 'sans-serif').attr('fill', 'black').attr('font-weight', 'bold')
-    legend.append('text').attr('x', 212).attr('y', -8).text('Total').attr('font-size', 14).attr('font-family', 'sans-serif').attr('fill', 'black').attr('font-weight', 'bold')
-    legend.append('text').attr('x', 210).attr('y', 8).text('Seats').attr('font-size', 14).attr('font-family', 'sans-serif').attr('fill', 'black').attr('font-weight', 'bold')
+    const baseline = leanLikelyEnabled ? -16 : 0
+
+    legend.append('text').attr('x', 28).attr('y', baseline).text('Party').attr('font-size', 14).attr('font-family', 'sans-serif').attr('fill', 'black').attr('font-weight', 'bold')
+    legend
+      .append('text')
+      .attr('x', 103)
+      .attr('y', baseline - 8)
+      .text('Electorate')
+      .attr('font-size', 14)
+      .attr('font-family', 'sans-serif')
+      .attr('fill', 'black')
+      .attr('font-weight', 'bold')
+    legend
+      .append('text')
+      .attr('x', 118)
+      .attr('y', baseline + 8)
+      .text('Seats')
+      .attr('font-size', 14)
+      .attr('font-family', 'sans-serif')
+      .attr('fill', 'black')
+      .attr('font-weight', 'bold')
+    if (leanLikelyEnabled) {
+      legend
+        .append('text')
+        .attr('x', 103)
+        .attr('y', baseline + 24)
+        .text('Sa')
+        .attr('font-size', 10)
+        .attr('font-family', 'sans-serif')
+        .attr('fill', 'black')
+        .attr('font-weight', 'bold')
+      legend
+        .append('text')
+        .attr('x', 123)
+        .attr('y', baseline + 24)
+        .text('Li')
+        .attr('font-size', 10)
+        .attr('font-family', 'sans-serif')
+        .attr('fill', 'black')
+        .attr('font-weight', 'bold')
+      legend
+        .append('text')
+        .attr('x', 143)
+        .attr('y', baseline + 24)
+        .text('Le')
+        .attr('font-size', 10)
+        .attr('font-family', 'sans-serif')
+        .attr('fill', 'black')
+        .attr('font-weight', 'bold')
+      legend
+        .append('text')
+        .attr('x', 163)
+        .attr('y', baseline + 24)
+        .text('To')
+        .attr('font-size', 10)
+        .attr('font-family', 'sans-serif')
+        .attr('fill', 'black')
+        .attr('font-weight', 'bold')
+    }
+    legend
+      .append('text')
+      .attr('x', 186)
+      .attr('y', baseline - 8)
+      .text('List')
+      .attr('font-size', 14)
+      .attr('font-family', 'sans-serif')
+      .attr('fill', 'black')
+      .attr('font-weight', 'bold')
+    legend
+      .append('text')
+      .attr('x', 180)
+      .attr('y', baseline + 8)
+      .text('Seats')
+      .attr('font-size', 14)
+      .attr('font-family', 'sans-serif')
+      .attr('fill', 'black')
+      .attr('font-weight', 'bold')
+    legend
+      .append('text')
+      .attr('x', 232)
+      .attr('y', baseline - 8)
+      .text('Total')
+      .attr('font-size', 14)
+      .attr('font-family', 'sans-serif')
+      .attr('fill', 'black')
+      .attr('font-weight', 'bold')
+    legend
+      .append('text')
+      .attr('x', 230)
+      .attr('y', baseline + 8)
+      .text('Seats')
+      .attr('font-size', 14)
+      .attr('font-family', 'sans-serif')
+      .attr('fill', 'black')
+      .attr('font-weight', 'bold')
 
     partiesWithSeats
       .sort((entry1, entry2) => (entry1[1].totalSeats > entry2[1].totalSeats ? -1 : 1))
       .forEach(([partyId, { electorateSeats, listSeats, totalSeats }], i) => {
         const y = (i + 1) * 20
 
-        const { name, color } = parties[partyId]
+        const { name, color, likely, lean } = parties[partyId]
 
-        legend.append('rect').attr('x', 0).attr('y', y).attr('width', 16).attr('height', 16).attr('fill', color).attr('stroke', 'black')
+        if (leanLikelyEnabled && likely && lean) {
+          legend.append('rect').attr('x', -32).attr('y', y).attr('width', 16).attr('height', 16).attr('fill', color)
+          legend.append('rect').attr('x', -16).attr('y', y).attr('width', 16).attr('height', 16).attr('fill', likely)
+          legend.append('rect').attr('x', 0).attr('y', y).attr('width', 16).attr('height', 16).attr('fill', lean)
+        } else {
+          legend.append('rect').attr('x', 0).attr('y', y).attr('width', 16).attr('height', 16).attr('fill', color)
+        }
 
         legend
           .append('text')
-          .attr('x', 24)
+          .attr('x', 22)
           .attr('y', y + 12)
           .text(name)
           .attr('font-size', 14)
           .attr('font-family', 'sans-serif')
           .attr('fill', 'black')
 
-        legend
-          .append('text')
-          .attr('x', 126 - electorateSeats.toString().length * 8)
-          .attr('y', y + 12)
-          .text(electorateSeats)
-          .attr('font-size', 14)
-          .attr('font-family', 'sans-serif')
-          .attr('fill', 'black')
+        if (leanLikelyEnabled) {
+          legend
+            .append('text')
+            .attr('x', 118 - electorateSeats.safe.toString().length * 8)
+            .attr('y', y + 12)
+            .text(electorateSeats.safe)
+            .attr('font-size', 14)
+            .attr('font-family', 'sans-serif')
+            .attr('fill', 'black')
+          legend
+            .append('text')
+            .attr('x', 138 - electorateSeats.likely.toString().length * 8)
+            .attr('y', y + 12)
+            .text(electorateSeats.likely)
+            .attr('font-size', 14)
+            .attr('font-family', 'sans-serif')
+            .attr('fill', 'black')
+          legend
+            .append('text')
+            .attr('x', 158 - electorateSeats.lean.toString().length * 8)
+            .attr('y', y + 12)
+            .text(electorateSeats.lean)
+            .attr('font-size', 14)
+            .attr('font-family', 'sans-serif')
+            .attr('fill', 'black')
+          legend
+            .append('text')
+            .attr('x', 178 - electorateSeats.total.toString().length * 8)
+            .attr('y', y + 12)
+            .text(electorateSeats.total)
+            .attr('font-size', 14)
+            .attr('font-family', 'sans-serif')
+            .attr('fill', 'black')
+        } else {
+          legend
+            .append('text')
+            .attr('x', 146 - electorateSeats.total.toString().length * 8)
+            .attr('y', y + 12)
+            .text(electorateSeats.total)
+            .attr('font-size', 14)
+            .attr('font-family', 'sans-serif')
+            .attr('fill', 'black')
+        }
 
         legend
           .append('text')
-          .attr('x', 184 - listSeats.toString().length * 8)
+          .attr('x', 204 - listSeats.toString().length * 8)
           .attr('y', y + 12)
           .text(listSeats)
           .attr('font-size', 14)
@@ -177,7 +348,7 @@ export const exportSvg = async (
 
         legend
           .append('text')
-          .attr('x', 238 - totalSeats.toString().length * 8)
+          .attr('x', 258 - totalSeats.toString().length * 8)
           .attr('y', y + 12)
           .text(totalSeats)
           .attr('font-size', 14)
@@ -269,28 +440,8 @@ export const exportSvg = async (
     })
   })
 
-  if (isMobile) {
-    lines.append('text').attr('x', 825).attr('y', 675).attr('fill', 'black').attr('font-size', 12).attr('font-family', 'sans-serif').text('Created using Interactive Electorate Map')
-  } else {
-    lines
-      .append('text')
-      .attr('x', 825)
-      .attr('y', 675)
-      .attr('fill', 'black')
-      .attr('font-size', 12)
-      .attr('font-family', 'sans-serif')
-      .text('Created using ')
-      .append('a')
-      .attr('xlink:href', 'https://hindley.me/interactive-electorate-map/')
-      .attr('target', '_blank')
-      .append('tspan')
-      .attr('cursor', 'pointer')
-      .attr('fill', 'blue')
-      .attr('text-decoration', 'underline')
-      .text('Interactive Electorate Map')
-  }
-
-  lines.append('text').attr('x', 826).attr('y', 690).attr('fill', 'black').attr('font-size', 11).attr('font-family', 'sans-serif').text('https://hindley.me/interactive-electorate-map')
+  lines.append('text').attr('x', 825).attr('y', 15).attr('fill', 'black').attr('font-size', 12).attr('font-family', 'sans-serif').text('Created using Interactive Electorate Map')
+  lines.append('text').attr('x', 826).attr('y', 30).attr('fill', 'black').attr('font-size', 11).attr('font-family', 'sans-serif').text('https://hindley.me/interactive-electorate-map')
 
   try {
     // Export the SVG with duplicates included

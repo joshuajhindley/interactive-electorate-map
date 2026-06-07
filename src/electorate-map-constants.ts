@@ -4,13 +4,13 @@ import type { Parties, TransformGroup } from './electorate-map-types'
  * Currently existing parties
  */
 export const realParties: Parties = {
-  nat: { id: 'nat', name: 'National', color: '#00529f' },
-  lab: { id: 'lab', name: 'Labour', color: '#d82a20' },
-  gre: { id: 'gre', name: 'Green', color: '#098137' },
-  act: { id: 'act', name: 'ACT', color: '#fde401' },
-  nzf: { id: 'nzf', name: 'NZ First', color: '#000000' },
-  tpm: { id: 'tpm', name: 'Te Pāti Māori', color: '#b2001a' },
-  top: { id: 'top', name: 'Opportunity', color: '#09B598' },
+  nat: { id: 'nat', name: 'National', color: '#00529f', likely: '#407db7', lean: '#80a9cf' },
+  lab: { id: 'lab', name: 'Labour', color: '#d82a20', likely: '#e25f58', lean: '#ec9590' },
+  gre: { id: 'gre', name: 'Green', color: '#098137', likely: '#47a169', lean: '#84c09b' },
+  act: { id: 'act', name: 'ACT', color: '#fde401', likely: '#feeb41', lean: '#fef280' },
+  nzf: { id: 'nzf', name: 'NZ First', color: '#000000', likely: '#404040', lean: '#808080' },
+  tpm: { id: 'tpm', name: 'Te Pāti Māori', color: 'url(#grad-tpm-safe)', likely: 'url(#grad-tpm-likely)', lean: 'url(#grad-tpm-lean)' },
+  top: { id: 'top', name: 'Opportunity', color: '#09B598', likely: '#47c8b2', lean: '#84dacc' },
 }
 
 /**

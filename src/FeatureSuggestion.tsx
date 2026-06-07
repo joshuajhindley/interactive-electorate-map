@@ -72,7 +72,7 @@ const FeatureSuggestion: React.FC = () => {
       <ReCAPTCHA onChange={setCaptchaToken} sitekey='6Lds-aMsAAAAADTZK2xTHmiKPI4foF2HRRalXKhg' />
 
       <button type='submit' disabled={status === 'SENDING'}>
-        {status === 'SENDING' ? 'Sending...' : 'Submit Suggestion'}
+        {status === 'SENDING' ? 'Sending...' : 'Submit'}
       </button>
 
       {status === 'ERROR' && <p className='suggest-error'>Something went wrong. Please check the captcha and try again.</p>}

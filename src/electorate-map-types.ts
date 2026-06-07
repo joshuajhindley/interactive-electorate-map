@@ -1,11 +1,24 @@
 export type ElectorateFeature = GeoJSON.Feature<GeoJSON.Geometry, { name: string; partyId: string }>
 
-export type PartyAssignments = Record<string, string>
+export enum SafeLikelyLean {
+  SAFE,
+  LIKELY,
+  LEAN,
+}
+
+export type PartyAssignments = {
+  [electorateId: string]: {
+    rating?: SafeLikelyLean
+    party: string
+  }
+}
 
 export type Party = {
   id: string
   name: string
   color: string
+  likely?: string
+  lean?: string
 }
 
 export type Parties = {
@@ -15,7 +28,12 @@ export type Parties = {
 export type Seats = {
   partyVotePercentage: number
   listSeats: number
-  electorateSeats: number
+  electorateSeats: {
+    total: number
+    safe: number
+    likely: number
+    lean: number
+  }
   totalSeats: number
   overhang: number
 }

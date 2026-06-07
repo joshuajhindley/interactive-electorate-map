@@ -3,8 +3,8 @@ import * as d3 from 'd3'
 import { feature } from 'topojson-client'
 import type { GeometryCollection } from 'topojson-specification'
 import Modal from './Modal'
-import { exportSvg, getCountByValue, getFill, getPartyPairKey, hashString, slugify } from './electorate-map-utils'
-import type { ElectorateFeature, Party, PartyAssignments, PartySeats, Seats } from './electorate-map-types'
+import { exportSvg, getCountByValue, getFill, getNextRating, getPartyPairKey, getPrevRating, hashString, slugify } from './electorate-map-utils'
+import { type ElectorateFeature, type Party, type PartyAssignments, type PartySeats, type Seats, SafeLikelyLean } from './electorate-map-types'
 import './ElectorateMap.scss'
 import { allParties, defaultPartyCompatibilities, parties, realParties } from './electorate-map-constants'
 import PartyMatrix from './PartyMatrix'
@@ -37,6 +37,7 @@ TODO:
 */
 
 const STORAGE_KEY = 'nz-electorate-ratings-2026'
+// TODO save party vote percentage and party compatibility in the browser storage
 
 export const ElectorateMap: React.FC<Props> = ({ isMobile }) => {
   const [generalTopology, setGeneralTopology] = useState<Nullable<Topology>>(null)
@@ -47,7 +48,7 @@ export const ElectorateMap: React.FC<Props> = ({ isMobile }) => {
     const initialSeats = {} as PartySeats
     Object.keys(parties).forEach((partyId) => {
       if (partyId !== 'unk') {
-        initialSeats[partyId] = { partyVotePercentage: 0, electorateSeats: 0, listSeats: 0, totalSeats: 0, overhang: 0 }
+        initialSeats[partyId] = { partyVotePercentage: 0, electorateSeats: { total: 0, safe: 0, likely: 0, lean: 0 }, listSeats: 0, totalSeats: 0, overhang: 0 }
       }
     })
     return initialSeats
@@ -57,6 +58,7 @@ export const ElectorateMap: React.FC<Props> = ({ isMobile }) => {
   const [results2023, setResults2023] = useState<PartyAssignments>({})
   const [electorateStats, setElectorateStats] = useState<ElectorateStats>({})
   const [mode, setMode] = useState<Mode>(Mode.GENERAL)
+  const [leanLikelyEnabled, setLeanLikelyEnabled] = useState(false)
   const [tooltip, setTooltip] = useState<Nullable<string>>(null)
   const [showHint, setShowHint] = useState<boolean>(false)
   const [hideMap, setHideMap] = useState<boolean>(false)
@@ -93,7 +95,9 @@ export const ElectorateMap: React.FC<Props> = ({ isMobile }) => {
           partyId,
           {
             ...prevSeats,
-            electorateSeats: electorateSeatsByParty[partyId] ?? 0,
+            electorateSeats: {
+              ...(electorateSeatsByParty[partyId] ?? { total: 0, safe: 0, likely: 0, lean: 0 }),
+            },
           },
         ]),
       ),
@@ -107,6 +111,8 @@ export const ElectorateMap: React.FC<Props> = ({ isMobile }) => {
       afterUpdateRef.current()
       afterUpdateRef.current = null
     }
+
+    // TODO store party seats in browser cache
   }, [partySeats])
 
   // Load JSON data
@@ -136,13 +142,13 @@ export const ElectorateMap: React.FC<Props> = ({ isMobile }) => {
   useEffect(() => {
     setResults2023(
       Object.entries(electorateStats).reduce((acc, [id, stats]) => {
-        acc[id] = Object.keys(stats['2023'][0])[0]
+        acc[id] = { party: Object.keys(stats['2023'][0])[0] }
         return acc
       }, {} as PartyAssignments),
     )
     setResults2020(
       Object.entries(electorateStats).reduce((acc, [id, stats]) => {
-        acc[id] = Object.keys(stats['2020'][0])[0]
+        acc[id] = { party: Object.keys(stats['2020'][0])[0] }
         return acc
       }, {} as PartyAssignments),
     )
@@ -283,11 +289,25 @@ export const ElectorateMap: React.FC<Props> = ({ isMobile }) => {
     }
   }
 
-  const handleClick = (id: string) => {
+  const handleClick = (id: string, newRatingFn: (currentRating?: SafeLikelyLean) => SafeLikelyLean) => {
+    const current = partyAssignments[id]
+    const isSameParty = current?.party === selectedParty.id
+
     setPartyAssignments({
       ...partyAssignments,
-      [id]: selectedParty.id,
+      [id]: {
+        party: selectedParty.id,
+        rating: leanLikelyEnabled ? newRatingFn(isSameParty ? current.rating : undefined) : SafeLikelyLean.SAFE,
+      },
     })
+  }
+
+  const handleLeftClick = (id: string) => {
+    handleClick(id, getNextRating)
+  }
+
+  const handleRightClick = (id: string) => {
+    handleClick(id, getPrevRating)
   }
 
   const slugifiedTooltip = useMemo(() => slugify(tooltip ?? ''), [tooltip])
@@ -303,7 +323,7 @@ export const ElectorateMap: React.FC<Props> = ({ isMobile }) => {
       key={'export-map'}
       onClick={async () => {
         setHideMap(true)
-        await exportSvg(gRef, svgRef, path, generalPaths, maoriPaths, generalFeatures, maoriFeatures, partyAssignments, partySeats, parties, isMobile)
+        await exportSvg(gRef, svgRef, path, generalPaths, maoriPaths, generalFeatures, maoriFeatures, partyAssignments, partySeats, parties, isMobile, leanLikelyEnabled)
         setHideMap(false)
       }}
     >
@@ -327,7 +347,7 @@ export const ElectorateMap: React.FC<Props> = ({ isMobile }) => {
     const seatsWithQuotient = [] as [string, number][]
 
     Object.entries(currentSeats).forEach(([party, { electorateSeats, partyVotePercentage }]) => {
-      if (partyVotePercentage === 0 || (!electorateSeats && partyVotePercentage < 5.0)) {
+      if (partyVotePercentage === 0 || (!electorateSeats.total && partyVotePercentage < 5.0)) {
         return
       }
 
@@ -352,10 +372,12 @@ export const ElectorateMap: React.FC<Props> = ({ isMobile }) => {
         partyId,
         {
           ...prevSeats,
-          electorateSeats: prevSeats.electorateSeats,
-          totalSeats: Math.max(prevSeats.electorateSeats, seats[partyId]),
-          listSeats: Math.max(0, seats[partyId] - prevSeats.electorateSeats),
-          overhang: Math.max(0, prevSeats.electorateSeats - seats[partyId]),
+          electorateSeats: {
+            ...prevSeats.electorateSeats,
+          },
+          totalSeats: Math.max(prevSeats.electorateSeats.total, seats[partyId]),
+          listSeats: Math.max(0, seats[partyId] - prevSeats.electorateSeats.total),
+          overhang: Math.max(0, prevSeats.electorateSeats.total - seats[partyId]),
         },
       ]),
     )
@@ -364,14 +386,22 @@ export const ElectorateMap: React.FC<Props> = ({ isMobile }) => {
   const totals = useMemo(() => {
     const allSeats: Seats = {
       partyVotePercentage: 0,
-      electorateSeats: 0,
+      electorateSeats: {
+        total: 0,
+        safe: 0,
+        likely: 0,
+        lean: 0,
+      },
       listSeats: 0,
       totalSeats: 0,
       overhang: 0,
     }
 
     Object.values(partySeats).forEach((value) => {
-      allSeats.electorateSeats += value.electorateSeats
+      allSeats.electorateSeats.total += value.electorateSeats.total
+      allSeats.electorateSeats.safe += value.electorateSeats.safe
+      allSeats.electorateSeats.likely += value.electorateSeats.likely
+      allSeats.electorateSeats.lean += value.electorateSeats.lean
       allSeats.listSeats += value.listSeats
       allSeats.totalSeats += value.totalSeats
       allSeats.overhang += value.overhang
@@ -443,7 +473,7 @@ export const ElectorateMap: React.FC<Props> = ({ isMobile }) => {
   }, [partySeats, totals, partyCompatibility])
 
   return (
-    <div className={`main-container ${isMobile ? 'mobile' : 'desktop'}`}>
+    <div className={`main-container ${isMobile ? 'mobile' : 'desktop'} ${leanLikelyEnabled ? '' : 'safe-only'}`}>
       {isMobile && !mobileAcknowledged && (
         <Modal onClose={() => setMobileAcknowledged(true)}>
           <div>Please note that while this page is usable on mobile, it is primarily intended and optimised for use on desktop devices.</div>
@@ -559,13 +589,38 @@ export const ElectorateMap: React.FC<Props> = ({ isMobile }) => {
                 <tr>
                   <th colSpan={2}>Party</th>
                   <th>Party Vote</th>
-                  <th>Electorate</th>
+                  <th colSpan={4}>Electorate</th>
                   <th>List</th>
                   <th>Total</th>
                   <th className='tooltip'>
                     OH<span className='tooltip-text'>Overhang</span>
                   </th>
                 </tr>
+                {leanLikelyEnabled && (
+                  <tr>
+                    <th colSpan={3}></th>
+                    <th>
+                      <span className='tooltip'>
+                        S<span className='tooltip-text'>Safe</span>
+                      </span>
+                    </th>
+                    <th>
+                      <span className='tooltip'>
+                        L<span className='tooltip-text'>Likely</span>
+                      </span>
+                    </th>
+                    <th>
+                      <span className='tooltip'>
+                        L<span className='tooltip-text'>Lean</span>
+                      </span>
+                    </th>
+                    <th>
+                      <span className='tooltip'>
+                        T<span className='tooltip-text'>Total</span>
+                      </span>
+                    </th>
+                  </tr>
+                )}
               </thead>
               <tbody>
                 {Object.entries(partySeats)
@@ -602,7 +657,18 @@ export const ElectorateMap: React.FC<Props> = ({ isMobile }) => {
                         />{' '}
                         %
                       </td>
-                      <td className='num-seats'>{value.electorateSeats}</td>
+                      {leanLikelyEnabled ? (
+                        <>
+                          <td>{value.electorateSeats.safe}</td>
+                          <td>{value.electorateSeats.likely}</td>
+                          <td>{value.electorateSeats.lean}</td>
+                          <td>{value.electorateSeats.total}</td>
+                        </>
+                      ) : (
+                        <td colSpan={4} className='num-seats'>
+                          {value.electorateSeats.total}
+                        </td>
+                      )}
                       <td className='num-seats'>{value.listSeats}</td>
                       <td className='num-seats'>{value.totalSeats}</td>
                       <td className='overhang'>{value.overhang || ''}</td>
@@ -611,7 +677,20 @@ export const ElectorateMap: React.FC<Props> = ({ isMobile }) => {
                 <tr>
                   <td colSpan={2}></td>
                   <td className='total-seats'>{totals.partyVotePercentage.toFixed(2) + '%'}</td>
-                  <td className='total-seats'>{totals.electorateSeats}</td>
+                  {/* TODO use safe likely lean enabled */}
+
+                  {leanLikelyEnabled ? (
+                    <>
+                      <td className='total-seats'>{totals.electorateSeats.safe}</td>
+                      <td className='total-seats'>{totals.electorateSeats.likely}</td>
+                      <td className='total-seats'>{totals.electorateSeats.lean}</td>
+                      <td className='total-seats'>{totals.electorateSeats.total}</td>
+                    </>
+                  ) : (
+                    <td colSpan={4} className='total-seats'>
+                      {totals.electorateSeats.total}
+                    </td>
+                  )}
                   <td className='total-seats'>{totals.listSeats}</td>
                   <td className='total-seats'>{totals.totalSeats}</td>
                   <td className='total-seats'>{totals.overhang || ''}</td>
@@ -673,25 +752,50 @@ export const ElectorateMap: React.FC<Props> = ({ isMobile }) => {
             role='img'
             aria-label='Interactive NZ electorates map, click an electorate to change rating'
           >
+            <defs>
+              <linearGradient id='grad-tpm-safe' x1='0' y1='0' x2='1' y2='0'>
+                <stop offset='0%' stopColor='#000000' stopOpacity='1' />
+                <stop offset='50%' stopColor='#000000' stopOpacity='1' />
+                <stop offset='50%' stopColor='#bf1d1f' stopOpacity='1' />
+                <stop offset='100%' stopColor='#bf1d1f' stopOpacity='1' />
+              </linearGradient>
+              <linearGradient id='grad-tpm-likely' x1='0' y1='0' x2='1' y2='0'>
+                <stop offset='0%' stopColor='#404040' stopOpacity='1' />
+                <stop offset='50%' stopColor='#404040' stopOpacity='1' />
+                <stop offset='50%' stopColor='#cf5557' stopOpacity='1' />
+                <stop offset='100%' stopColor='#cf5557' stopOpacity='1' />
+              </linearGradient>
+              <linearGradient id='grad-tpm-lean' x1='0' y1='0' x2='1' y2='0'>
+                <stop offset='0%' stopColor='#808080' stopOpacity='1' />
+                <stop offset='50%' stopColor='#808080' stopOpacity='1' />
+                <stop offset='50%' stopColor='#df8e8f' stopOpacity='1' />
+                <stop offset='100%' stopColor='#df8e8f' stopOpacity='1' />
+              </linearGradient>
+            </defs>
             <g ref={gRef}>
               {(mode === Mode.GENERAL ? generalPaths : maoriPaths).map(({ id, d, name }) => (
                 <path
                   key={id}
                   d={d}
                   data-id={id}
-                  fill={getFill(partyAssignments, parties, id)}
+                  fill={getFill(partyAssignments, parties, id, leanLikelyEnabled)}
                   stroke='#333'
                   className={`electorate ${partyAssignments[id] || 'unk'}`}
                   tabIndex={-1}
                   aria-label={`${name} - ${partyAssignments[id] ?? 'unk'}`}
+                  onContextMenu={(e) => {
+                    e.preventDefault()
+                    setTooltip(name)
+                    handleRightClick(id)
+                  }}
                   onClick={() => {
                     setTooltip(name)
-                    handleClick(id)
+                    handleLeftClick(id)
                   }}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' || e.key === ' ') {
                       setTooltip(name)
-                      handleClick(id)
+                      handleLeftClick(id)
                     }
                   }}
                   onMouseEnter={() => {
@@ -712,6 +816,8 @@ export const ElectorateMap: React.FC<Props> = ({ isMobile }) => {
         setMode={setMode}
         partyAssignments={partyAssignments}
         setPartyAssignments={setPartyAssignments}
+        leanLikelyEnabled={leanLikelyEnabled}
+        setLeanLikelyEnabled={setLeanLikelyEnabled}
         setPartySeats={setPartySeats}
         selectedParty={selectedParty}
         setSelectedParty={setSelectedParty}
@@ -729,6 +835,8 @@ type OptionsProps = {
   setMode: React.Dispatch<React.SetStateAction<Mode>>
   partyAssignments: PartyAssignments
   setPartyAssignments: React.Dispatch<React.SetStateAction<PartyAssignments>>
+  leanLikelyEnabled: boolean
+  setLeanLikelyEnabled: React.Dispatch<React.SetStateAction<boolean>>
   setPartySeats: React.Dispatch<React.SetStateAction<PartySeats>>
   results2023: PartyAssignments
   results2020: PartyAssignments
@@ -804,7 +912,12 @@ const Options: React.FC<OptionsProps> = (props) => {
             updatedSeats[party] = {
               partyVotePercentage: results[2020][party][0],
               listSeats: results[2020][party][1],
-              electorateSeats: electorateCountByParty[party] ?? 0,
+              electorateSeats: {
+                total: electorateCountByParty[party]?.total ?? 0,
+                safe: electorateCountByParty[party]?.total ?? 0,
+                likely: 0,
+                lean: 0,
+              },
               totalSeats: results[2020][party][2],
               overhang: results[2020][party][3],
             }
@@ -818,7 +931,12 @@ const Options: React.FC<OptionsProps> = (props) => {
             updatedSeats[party] = {
               partyVotePercentage: results[2023][party][0],
               listSeats: results[2023][party][1],
-              electorateSeats: electorateCountByParty[party] ?? 0,
+              electorateSeats: {
+                total: electorateCountByParty[party]?.total ?? 0,
+                safe: electorateCountByParty[party]?.total ?? 0,
+                likely: 0,
+                lean: 0,
+              },
               totalSeats: results[2023][party][2],
               overhang: results[2023][party][3],
             }
@@ -829,7 +947,7 @@ const Options: React.FC<OptionsProps> = (props) => {
       case 'none':
         props.setPartySeats((prev) => {
           Object.keys(prev).forEach((party) => {
-            updatedSeats[party] = { partyVotePercentage: 0, electorateSeats: 0, listSeats: 0, totalSeats: 0, overhang: 0 }
+            updatedSeats[party] = { partyVotePercentage: 0, electorateSeats: { total: 0, safe: 0, likely: 0, lean: 0 }, listSeats: 0, totalSeats: 0, overhang: 0 }
           })
           return updatedSeats
         })
@@ -920,7 +1038,15 @@ const Options: React.FC<OptionsProps> = (props) => {
           {Object.keys(parties).map((partyId) => (
             <label key={partyId} className={`selector ${props.selectedParty.id === partyId ? 'selected' : ''}`}>
               <input className='hidden' type='radio' name='party' value={partyId} checked={props.selectedParty.id === partyId} onChange={() => props.setSelectedParty(parties[partyId])} />
-              <span className={`party-box ${partyId}`} />
+              {props.leanLikelyEnabled && partyId !== 'unk' ? (
+                <span className='rating-group'>
+                  <span className={`party-box ${partyId}-safe`} />
+                  <span className={`party-box ${partyId}-likely`} />
+                  <span className={`party-box ${partyId}-lean`} />
+                </span>
+              ) : (
+                <span className={`party-box ${partyId}`} />
+              )}
               {parties[partyId].name}
             </label>
           ))}
@@ -972,6 +1098,12 @@ const Options: React.FC<OptionsProps> = (props) => {
             />
             <span className='party-box' />
             Party
+          </label>
+          <hr />
+          <label className={`selector ${props.leanLikelyEnabled ? 'selected' : ''}`}>
+            <input className='hidden' type='checkbox' checked={props.leanLikelyEnabled} onChange={() => props.setLeanLikelyEnabled(!props.leanLikelyEnabled)} />
+            <span className='party-box' />
+            Lean/Likely
           </label>
           <div className='message'>Use the 'Export Map' button to combine both electorate types into a single image and download it.</div>
         </div>
