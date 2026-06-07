@@ -309,6 +309,9 @@
       font-weight: bold;
 
       .party-box.act::before, .party-box.act::after,
+      .party-box.act-safe::before, .party-box.act-safe::after,
+      .party-box.act-likely::before, .party-box.act-likely::after,
+      .party-box.act-lean::before, .party-box.act-lean::after,
       .party-box.unk::before, .party-box.unk::after  {
         background: black;
       }
